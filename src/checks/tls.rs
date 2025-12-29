@@ -59,7 +59,7 @@ pub struct TlsIssue {
 }
 
 /// Issue severity level
-#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Severity {
     Low,
     Medium,

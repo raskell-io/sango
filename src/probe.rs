@@ -25,8 +25,8 @@ pub struct ProbeResult {
     pub latency: Option<latency::LatencyResult>,
     /// Overall health assessment
     pub overall_health: Health,
-    /// Error message if probe failed
-    pub error: Option<String>,
+    /// Error messages from failed checks
+    pub errors: Vec<String>,
 }
 
 /// Overall health assessment
@@ -61,6 +61,8 @@ pub struct ProbeConfig {
     pub skip_http: bool,
     /// Skip security header checks
     pub skip_headers: bool,
+    /// Skip latency checks
+    pub skip_latency: bool,
     /// Connection timeout
     pub timeout: Duration,
 }
@@ -71,6 +73,7 @@ impl Default for ProbeConfig {
             skip_tls: false,
             skip_http: false,
             skip_headers: false,
+            skip_latency: false,
             timeout: Duration::from_secs(10),
         }
     }
@@ -87,32 +90,59 @@ pub async fn run_probe(target: &str, config: ProbeConfig) -> Result<ProbeResult>
         headers: None,
         latency: None,
         overall_health: Health::Unknown,
-        error: None,
+        errors: Vec::new(),
     };
 
-    // Run TLS check
+    // Run TLS check first - if this fails, we likely can't proceed
     if !config.skip_tls {
         match tls::check_tls(target, config.timeout).await {
             Ok(tls_result) => {
                 result.tls = Some(tls_result);
             }
             Err(e) => {
-                result.error = Some(format!("TLS check failed: {}", e));
+                result.errors.push(format!("TLS: {}", e));
+                // TLS failure is critical - calculate health and return
                 result.overall_health = Health::Unhealthy;
                 return Ok(result);
             }
         }
     }
 
-    // TODO: Run HTTP check when implemented
-    // if !config.skip_http {
-    //     result.http = Some(http::check_http(target).await?);
-    // }
+    // Run HTTP check
+    if !config.skip_http {
+        match http::check_http(target, config.timeout).await {
+            Ok(http_result) => {
+                result.http = Some(http_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("HTTP: {}", e));
+            }
+        }
+    }
 
-    // TODO: Run headers check when implemented
-    // if !config.skip_headers {
-    //     result.headers = Some(headers::check_headers(target).await?);
-    // }
+    // Run security headers check
+    if !config.skip_headers {
+        match headers::check_headers(target, config.timeout).await {
+            Ok(headers_result) => {
+                result.headers = Some(headers_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("Headers: {}", e));
+            }
+        }
+    }
+
+    // Run latency check
+    if !config.skip_latency {
+        match latency::check_latency(target, config.timeout).await {
+            Ok(latency_result) => {
+                result.latency = Some(latency_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("Latency: {}", e));
+            }
+        }
+    }
 
     // Calculate overall health based on results
     result.overall_health = calculate_health(&result);
@@ -127,8 +157,8 @@ fn calculate_health(result: &ProbeResult) -> Health {
     let mut has_medium_or_low = false;
 
     // Check TLS issues
-    if let Some(ref tls) = result.tls {
-        for issue in &tls.issues {
+    if let Some(ref tls_result) = result.tls {
+        for issue in &tls_result.issues {
             match issue.severity {
                 tls::Severity::Critical => has_critical = true,
                 tls::Severity::High => has_high = true,
@@ -137,14 +167,49 @@ fn calculate_health(result: &ProbeResult) -> Health {
         }
     }
 
-    // TODO: Check HTTP issues when implemented
-    // TODO: Check header issues when implemented
+    // Check HTTP issues
+    if let Some(ref http_result) = result.http {
+        for issue in &http_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check header issues
+    if let Some(ref headers_result) = result.headers {
+        for issue in &headers_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check latency issues
+    if let Some(ref latency_result) = result.latency {
+        for issue in &latency_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Include errors in health calculation
+    if !result.errors.is_empty() {
+        has_high = true;
+    }
 
     if has_critical || has_high {
         Health::Unhealthy
     } else if has_medium_or_low {
         Health::Degraded
-    } else if result.tls.is_some() {
+    } else if result.tls.is_some() || result.http.is_some() {
         Health::Healthy
     } else {
         Health::Unknown

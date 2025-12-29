@@ -46,6 +46,10 @@ struct Args {
     #[arg(long, help = "Skip HSTS, CSP, and other security header checks")]
     skip_headers: bool,
 
+    /// Skip latency breakdown checks
+    #[arg(long, help = "Skip DNS, TCP, TLS, TTFB latency measurements")]
+    skip_latency: bool,
+
     /// Connection timeout in seconds
     #[arg(short, long, default_value = "10", value_name = "SECONDS")]
     timeout: u64,
@@ -89,6 +93,7 @@ async fn main() -> Result<()> {
         skip_tls: args.skip_tls,
         skip_http: args.skip_http,
         skip_headers: args.skip_headers,
+        skip_latency: args.skip_latency,
         timeout: Duration::from_secs(args.timeout),
     };
 

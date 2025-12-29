@@ -22,10 +22,14 @@ path = "src/main.rs"
 tokio = { version = "1.40", features = ["full"] }
 
 # TLS inspection
-rustls = "0.23"
+rustls = { version = "0.23", features = ["ring"] }
 rustls-native-certs = "0.8"
+tokio-rustls = { version = "0.26", features = ["ring"] }
 webpki-roots = "0.26"
 x509-parser = "0.16"
+
+# URL parsing
+url = "2.5"
 
 # HTTP client
 reqwest = { version = "0.12", features = ["rustls-tls", "gzip", "brotli"] }

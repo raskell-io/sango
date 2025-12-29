@@ -1,0 +1,69 @@
+[package]
+name = "sango"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Raskell Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/raskell-io/sango"
+homepage = "https://raskell.io"
+documentation = "https://github.com/raskell-io/sango"
+description = "Operator-grade edge diagnostics CLI - TLS, HTTP/3, security headers, WAF signals, and latency analysis"
+keywords = ["diagnostics", "tls", "http", "security", "edge"]
+categories = ["command-line-utilities", "network-programming"]
+readme = "README.md"
+
+[[bin]]
+name = "sango"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.40", features = ["full"] }
+
+# TLS inspection
+rustls = "0.23"
+rustls-native-certs = "0.8"
+webpki-roots = "0.26"
+x509-parser = "0.16"
+
+# HTTP client
+reqwest = { version = "0.12", features = ["rustls-tls", "gzip", "brotli"] }
+hyper = { version = "1.5", features = ["client", "http1", "http2"] }
+hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "http2"] }
+http = "1.2"
+
+# DNS
+hickory-resolver = "0.24"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# CLI
+clap = { version = "4.5", features = ["derive", "env", "color"] }
+
+# Output formatting
+colored = "2.1"
+tabled = "0.16"
+
+# Timing
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+[dev-dependencies]
+tempfile = "3.12"
+wiremock = "0.6"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

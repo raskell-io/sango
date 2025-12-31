@@ -74,21 +74,28 @@ pub fn init() {
 /// Run a probe against a target URL
 #[wasm_bindgen]
 pub async fn probe(target: String) -> Result<JsValue, JsValue> {
-    let result = run_probe(&target).await.map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let result = run_probe(&target)
+        .await
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
     serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 /// Run a probe and return JSON string
 #[wasm_bindgen]
 pub async fn probe_json(target: String) -> Result<String, JsValue> {
-    let result = run_probe(&target).await.map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let result = run_probe(&target)
+        .await
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
     serde_json::to_string_pretty(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 /// Internal probe implementation
 async fn run_probe(target: &str) -> Result<ProbeResult, String> {
     let url = normalize_url(target);
-    let timestamp = js_sys::Date::new_0().to_iso_string().as_string().unwrap_or_default();
+    let timestamp = js_sys::Date::new_0()
+        .to_iso_string()
+        .as_string()
+        .unwrap_or_default();
 
     // Clear performance entries for accurate timing
     if let Some(performance) = web_sys::window().and_then(|w| w.performance()) {
@@ -104,12 +111,19 @@ async fn run_probe(target: &str) -> Result<ProbeResult, String> {
 
     let request = Request::new_with_str_and_init(&url, &opts)
         .map_err(|e| format!("Failed to create request: {:?}", e))?;
-    request.headers().set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+    request
+        .headers()
+        .set(
+            "Accept",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        )
         .map_err(|e| format!("Failed to set headers: {:?}", e))?;
 
-    let resp_value = JsFuture::from(window.fetch_with_request(&request)).await
+    let resp_value = JsFuture::from(window.fetch_with_request(&request))
+        .await
         .map_err(|e| format!("Fetch failed: {:?}", e))?;
-    let response: Response = resp_value.dyn_into()
+    let response: Response = resp_value
+        .dyn_into()
         .map_err(|e| format!("Invalid response: {:?}", e))?;
 
     let status_code = response.status();
@@ -119,9 +133,11 @@ async fn run_probe(target: &str) -> Result<ProbeResult, String> {
     let tech_headers = extract_tech_headers(&response);
 
     // Get response body
-    let body_promise = response.text()
+    let body_promise = response
+        .text()
         .map_err(|e| format!("Failed to get response text: {:?}", e))?;
-    let body_value = JsFuture::from(body_promise).await
+    let body_value = JsFuture::from(body_promise)
+        .await
         .map_err(|e| format!("Failed to read response body: {:?}", e))?;
     let body = body_value.as_string().unwrap_or_default();
 
@@ -192,12 +208,22 @@ fn extract_raw_headers(response: &Response) -> RawHeaders {
 
     // Check common headers (can't iterate in web-sys)
     let header_names = [
-        "content-type", "content-length", "server", "cache-control",
-        "strict-transport-security", "content-security-policy",
+        "content-type",
+        "content-length",
+        "server",
+        "cache-control",
+        "strict-transport-security",
+        "content-security-policy",
         "content-security-policy-report-only",
-        "x-frame-options", "x-content-type-options", "x-xss-protection",
-        "referrer-policy", "permissions-policy", "feature-policy",
-        "content-encoding", "x-robots-tag", "content-language",
+        "x-frame-options",
+        "x-content-type-options",
+        "x-xss-protection",
+        "referrer-policy",
+        "permissions-policy",
+        "feature-policy",
+        "content-encoding",
+        "x-robots-tag",
+        "content-language",
         "x-powered-by",
     ];
 
@@ -214,9 +240,7 @@ fn extract_raw_headers(response: &Response) -> RawHeaders {
 fn extract_tech_headers(response: &Response) -> TechStackHeaders {
     let headers = response.headers();
 
-    let get = |name: &str| -> Option<String> {
-        headers.get(name).ok().flatten()
-    };
+    let get = |name: &str| -> Option<String> { headers.get(name).ok().flatten() };
 
     TechStackHeaders {
         server: get("server"),

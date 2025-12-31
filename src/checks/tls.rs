@@ -90,16 +90,17 @@ struct CertInfo {
 fn parse_target(target: &str) -> Result<(String, u16)> {
     // Try parsing as URL first
     if let Ok(url) = Url::parse(target) {
-        let host = url
-            .host_str()
-            .ok_or_else(|| anyhow!("URL has no host"))?
-            .to_string();
-        let port = url.port().unwrap_or(match url.scheme() {
-            "https" => 443,
-            "http" => 80,
-            _ => 443,
-        });
-        return Ok((host, port));
+        // Only use URL parsing if we got a valid host
+        // (handles case where "host:port" parses with host as scheme)
+        if let Some(host) = url.host_str() {
+            let port = url.port().unwrap_or(match url.scheme() {
+                "https" => 443,
+                "http" => 80,
+                _ => 443,
+            });
+            return Ok((host.to_string(), port));
+        }
+        // URL parsed but no host - fall through to host:port parsing
     }
 
     // Try parsing as host:port
@@ -132,8 +133,8 @@ fn build_client_config() -> Result<ClientConfig> {
 
     // Set ALPN protocols in preference order
     config.alpn_protocols = vec![
-        b"h2".to_vec(),        // HTTP/2
-        b"http/1.1".to_vec(),  // HTTP/1.1
+        b"h2".to_vec(),       // HTTP/2
+        b"http/1.1".to_vec(), // HTTP/1.1
     ];
 
     Ok(config)
@@ -148,8 +149,8 @@ fn parse_leaf_certificate(cert_der: &[u8]) -> Result<CertInfo> {
     let issuer = cert.issuer().to_string();
 
     let validity = cert.validity();
-    let expires_at = SystemTime::UNIX_EPOCH
-        + Duration::from_secs(validity.not_after.timestamp() as u64);
+    let expires_at =
+        SystemTime::UNIX_EPOCH + Duration::from_secs(validity.not_after.timestamp() as u64);
 
     let is_self_signed = subject == issuer;
 
@@ -188,13 +189,13 @@ fn format_tls_version(version: rustls::ProtocolVersion) -> String {
 /// Check if a cipher suite is considered weak
 fn is_weak_cipher(cipher_name: &str) -> bool {
     let weak_patterns = [
-        "CBC",      // CBC mode has padding oracle vulnerabilities
-        "3DES",     // Triple DES is deprecated
-        "RC4",      // RC4 is broken
-        "NULL",     // No encryption
-        "EXPORT",   // Export-grade crypto
-        "anon",     // Anonymous (no authentication)
-        "MD5",      // MD5 is broken for signatures
+        "CBC",    // CBC mode has padding oracle vulnerabilities
+        "3DES",   // Triple DES is deprecated
+        "RC4",    // RC4 is broken
+        "NULL",   // No encryption
+        "EXPORT", // Export-grade crypto
+        "anon",   // Anonymous (no authentication)
+        "MD5",    // MD5 is broken for signatures
     ];
 
     weak_patterns.iter().any(|p| cipher_name.contains(p))
@@ -329,7 +330,9 @@ pub async fn check_tls(target: &str, timeout: Duration) -> Result<TlsResult> {
     let chain_length = certs.len();
 
     // Parse leaf certificate
-    let leaf_cert = certs.first().ok_or_else(|| anyhow!("Empty certificate chain"))?;
+    let leaf_cert = certs
+        .first()
+        .ok_or_else(|| anyhow!("Empty certificate chain"))?;
     let cert_info = parse_leaf_certificate(leaf_cert.as_ref())?;
 
     let expires_in_days = days_until_expiry(cert_info.expires_at);

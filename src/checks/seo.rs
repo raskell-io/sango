@@ -229,7 +229,10 @@ pub async fn check_seo(target: &str, timeout: Duration) -> Result<SeoResult> {
     // Fetch the page
     let response = client
         .get(&url)
-        .header("User-Agent", "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)")
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)",
+        )
         .send()
         .await
         .context(format!("Failed to fetch {}", url))?;
@@ -372,7 +375,8 @@ fn extract_canonical(document: &Html, page_url: &str) -> Option<CanonicalInfo> {
     }
 
     let is_absolute = url.starts_with("http://") || url.starts_with("https://");
-    let is_self_referencing = normalize_url_for_comparison(&url) == normalize_url_for_comparison(page_url);
+    let is_self_referencing =
+        normalize_url_for_comparison(&url) == normalize_url_for_comparison(page_url);
 
     Some(CanonicalInfo {
         url,
@@ -441,7 +445,11 @@ fn extract_open_graph(document: &Html) -> OpenGraphInfo {
     if let Ok(selector) = Selector::parse("meta[property^='og:']") {
         for element in document.select(&selector) {
             let property = element.value().attr("property").unwrap_or_default();
-            let content = element.value().attr("content").unwrap_or_default().to_string();
+            let content = element
+                .value()
+                .attr("content")
+                .unwrap_or_default()
+                .to_string();
 
             match property {
                 "og:title" => og.title = Some(content),
@@ -468,7 +476,11 @@ fn extract_twitter_card(document: &Html) -> TwitterCardInfo {
     if let Ok(selector) = Selector::parse("meta[name^='twitter:']") {
         for element in document.select(&selector) {
             let name = element.value().attr("name").unwrap_or_default();
-            let content = element.value().attr("content").unwrap_or_default().to_string();
+            let content = element
+                .value()
+                .attr("content")
+                .unwrap_or_default()
+                .to_string();
 
             match name {
                 "twitter:card" => tc.card_type = Some(content),
@@ -720,7 +732,9 @@ fn generate_issues(
                 severity: Severity::High,
                 category: "title".to_string(),
                 message: "Missing title tag".to_string(),
-                recommendation: Some("Add a unique, descriptive title tag (50-60 characters)".to_string()),
+                recommendation: Some(
+                    "Add a unique, descriptive title tag (50-60 characters)".to_string(),
+                ),
             });
         }
         Some(t) => {
@@ -729,7 +743,9 @@ fn generate_issues(
                     severity: Severity::Medium,
                     category: "title".to_string(),
                     message: format!("Title too short ({} characters)", t.length),
-                    recommendation: Some("Aim for 50-60 characters for optimal display".to_string()),
+                    recommendation: Some(
+                        "Aim for 50-60 characters for optimal display".to_string(),
+                    ),
                 });
             } else if t.may_truncate {
                 issues.push(SeoIssue {
@@ -749,7 +765,9 @@ fn generate_issues(
                 severity: Severity::High,
                 category: "description".to_string(),
                 message: "Missing meta description".to_string(),
-                recommendation: Some("Add a compelling meta description (150-160 characters)".to_string()),
+                recommendation: Some(
+                    "Add a compelling meta description (150-160 characters)".to_string(),
+                ),
             });
         }
         Some(d) => {
@@ -778,7 +796,9 @@ fn generate_issues(
                 severity: Severity::Medium,
                 category: "canonical".to_string(),
                 message: "Missing canonical URL".to_string(),
-                recommendation: Some("Add a canonical link to prevent duplicate content issues".to_string()),
+                recommendation: Some(
+                    "Add a canonical link to prevent duplicate content issues".to_string(),
+                ),
             });
         }
         Some(c) => {
@@ -799,7 +819,9 @@ fn generate_issues(
             severity: Severity::High,
             category: "robots".to_string(),
             message: "Page is set to noindex".to_string(),
-            recommendation: Some("Remove noindex if this page should appear in search results".to_string()),
+            recommendation: Some(
+                "Remove noindex if this page should appear in search results".to_string(),
+            ),
         });
     }
 
@@ -819,8 +841,13 @@ fn generate_issues(
             issues.push(SeoIssue {
                 severity: Severity::Low,
                 category: "social".to_string(),
-                message: format!("Incomplete Open Graph tags (missing: {})", missing.join(", ")),
-                recommendation: Some("Add all required OG tags for better social sharing".to_string()),
+                message: format!(
+                    "Incomplete Open Graph tags (missing: {})",
+                    missing.join(", ")
+                ),
+                recommendation: Some(
+                    "Add all required OG tags for better social sharing".to_string(),
+                ),
             });
         }
     }
@@ -831,7 +858,9 @@ fn generate_issues(
             severity: Severity::Low,
             category: "social".to_string(),
             message: "Missing Twitter Card tags".to_string(),
-            recommendation: Some("Add twitter:card meta tag for better Twitter sharing".to_string()),
+            recommendation: Some(
+                "Add twitter:card meta tag for better Twitter sharing".to_string(),
+            ),
         });
     }
 
@@ -845,7 +874,9 @@ fn generate_issues(
             },
             category: "headings".to_string(),
             message: issue.clone(),
-            recommendation: Some("Ensure proper heading hierarchy (one H1, followed by H2s, etc.)".to_string()),
+            recommendation: Some(
+                "Ensure proper heading hierarchy (one H1, followed by H2s, etc.)".to_string(),
+            ),
         });
     }
 
@@ -855,7 +886,10 @@ fn generate_issues(
             severity: Severity::High,
             category: "mobile".to_string(),
             message: "Missing viewport meta tag".to_string(),
-            recommendation: Some("Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">".to_string()),
+            recommendation: Some(
+                "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+                    .to_string(),
+            ),
         });
     }
 
@@ -1008,7 +1042,8 @@ mod tests {
 
     #[test]
     fn test_canonical_extraction() {
-        let html = r#"<html><head><link rel="canonical" href="https://example.com/page"></head></html>"#;
+        let html =
+            r#"<html><head><link rel="canonical" href="https://example.com/page"></head></html>"#;
         let document = Html::parse_document(html);
         let canonical = extract_canonical(&document, "https://example.com/page");
 
@@ -1115,7 +1150,17 @@ mod tests {
             ..Default::default()
         };
 
-        let score = calculate_score(&title, &desc, &canonical, &robots, &og, &headings, &tech, &sd, &[]);
+        let score = calculate_score(
+            &title,
+            &desc,
+            &canonical,
+            &robots,
+            &og,
+            &headings,
+            &tech,
+            &sd,
+            &[],
+        );
         assert!(score >= 95); // Should be high for a well-optimized page
     }
 }

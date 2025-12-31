@@ -115,7 +115,12 @@ pub async fn check_latency(target: &str, timeout: Duration) -> Result<LatencyRes
     let total = total_start.elapsed();
 
     // Generate issues based on thresholds
-    let issues = generate_issues(&dns_lookup, &tcp_connect, &tls_handshake, &time_to_first_byte);
+    let issues = generate_issues(
+        &dns_lookup,
+        &tcp_connect,
+        &tls_handshake,
+        &time_to_first_byte,
+    );
 
     Ok(LatencyResult {
         dns_lookup,
@@ -302,7 +307,10 @@ fn generate_issues(
         issues.push(LatencyIssue {
             severity: Severity::High,
             phase: "TTFB".to_string(),
-            message: format!("Time to first byte took {}ms (high) - backend slow", ttfb_ms),
+            message: format!(
+                "Time to first byte took {}ms (high) - backend slow",
+                ttfb_ms
+            ),
         });
     } else if ttfb_ms >= thresholds.ttfb_warn {
         issues.push(LatencyIssue {

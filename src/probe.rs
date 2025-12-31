@@ -6,7 +6,9 @@ use anyhow::Result;
 use serde::Serialize;
 use std::time::Duration;
 
-use crate::checks::{aeo, assets, content, discovery, headers, http, latency, seo, techstack, tls, topology};
+use crate::checks::{
+    aeo, assets, content, discovery, headers, http, latency, seo, techstack, tls, topology,
+};
 
 /// Result of all diagnostic probes
 #[derive(Debug, Serialize)]
@@ -154,8 +156,8 @@ impl Default for ProbeConfig {
             // Assets defaults
             assets_slow_threshold_ms: 500,
             assets_very_slow_threshold_ms: 2000,
-            assets_large_js_bytes: 100 * 1024,      // 100KB
-            assets_large_image_bytes: 500 * 1024,   // 500KB
+            assets_large_js_bytes: 100 * 1024,    // 100KB
+            assets_large_image_bytes: 500 * 1024, // 500KB
             assets_third_party_threshold: 50,
             assets_include_fonts: true,
             assets_include_media: true,

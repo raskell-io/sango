@@ -84,7 +84,8 @@ impl Section {
 
     fn help_text(&self) -> &'static str {
         match self {
-            Section::Overview => r#"SANGO EDGE DIAGNOSTICS
+            Section::Overview => {
+                r#"SANGO EDGE DIAGNOSTICS
 
 Sango performs read-only, non-invasive diagnostic checks against web endpoints to assess their health, security, and discoverability.
 
@@ -107,9 +108,11 @@ HEALTH STATUS:
 • Healthy - No critical or high severity issues
 • Degraded - Medium/low severity issues found
 • Unhealthy - Critical or high severity issues
-• Unknown - Probe couldn't complete"#,
+• Unknown - Probe couldn't complete"#
+            }
 
-            Section::Tls => r#"TLS (TRANSPORT LAYER SECURITY)
+            Section::Tls => {
+                r#"TLS (TRANSPORT LAYER SECURITY)
 
 TLS encrypts the connection between browsers and your server, protecting data in transit.
 
@@ -134,9 +137,11 @@ WHY IT MATTERS:
 • Expired certificates break user trust
 • Weak TLS versions are vulnerable to attacks
 • Missing intermediates cause mobile failures
-• ALPN enables HTTP/2 for better performance"#,
+• ALPN enables HTTP/2 for better performance"#
+            }
 
-            Section::Http => r#"HTTP PROTOCOL ANALYSIS
+            Section::Http => {
+                r#"HTTP PROTOCOL ANALYSIS
 
 Analyzes the HTTP protocol capabilities and behavior of the endpoint.
 
@@ -161,9 +166,11 @@ WHY IT MATTERS:
 • HTTP/2 reduces latency by ~30-50%
 • HTTP/3 improves mobile/lossy connections
 • Redirect chains add cumulative latency
-• Protocol support affects Core Web Vitals"#,
+• Protocol support affects Core Web Vitals"#
+            }
 
-            Section::Headers => r#"SECURITY HEADERS
+            Section::Headers => {
+                r#"SECURITY HEADERS
 
 HTTP response headers that instruct browsers to enable security protections.
 
@@ -191,9 +198,11 @@ WHY IT MATTERS:
 • Missing HSTS allows downgrade attacks
 • No CSP enables XSS vulnerabilities
 • These headers are easy wins for security
-• Many are required for compliance (PCI, SOC2)"#,
+• Many are required for compliance (PCI, SOC2)"#
+            }
 
-            Section::Latency => r#"LATENCY BREAKDOWN
+            Section::Latency => {
+                r#"LATENCY BREAKDOWN
 
 Measures the time spent in each phase of establishing a connection and receiving content.
 
@@ -222,9 +231,11 @@ WHY IT MATTERS:
 • TCP: CDN brings servers closer
 • TLS: HTTP/2 connection reuse helps
 • TTFB: Optimize backend/caching
-• These directly impact Core Web Vitals"#,
+• These directly impact Core Web Vitals"#
+            }
 
-            Section::Discovery => r#"DISCOVERY ANALYSIS
+            Section::Discovery => {
+                r#"DISCOVERY ANALYSIS
 
 Discovers the structure and configuration of a web property through standard, non-invasive probing.
 
@@ -249,9 +260,11 @@ WHY IT MATTERS:
 • robots.txt misconfig can hide your site from search
 • Missing sitemap hurts SEO crawl efficiency
 • Exposed /metrics or /health may leak info
-• security.txt helps security researchers contact you"#,
+• security.txt helps security researchers contact you"#
+            }
 
-            Section::TechStack => r#"TECHNOLOGY STACK DETECTION
+            Section::TechStack => {
+                r#"TECHNOLOGY STACK DETECTION
 
 Identifies the technologies powering the endpoint through passive fingerprinting.
 
@@ -282,9 +295,11 @@ WHY IT MATTERS:
 • Outdated versions may have vulnerabilities
 • Exposed version info aids attackers
 • Helps understand maintenance requirements
-• CDN detection confirms edge deployment"#,
+• CDN detection confirms edge deployment"#
+            }
 
-            Section::Seo => r#"SEO (SEARCH ENGINE OPTIMIZATION)
+            Section::Seo => {
+                r#"SEO (SEARCH ENGINE OPTIMIZATION)
 
 Analyzes signals that affect how search engines understand and rank your pages.
 
@@ -318,9 +333,11 @@ WHY IT MATTERS:
 • 60% of traffic comes from search engines
 • Missing meta tags = poor click-through rates
 • Broken canonicals cause ranking issues
-• Structured data enables rich results"#,
+• Structured data enables rich results"#
+            }
 
-            Section::Aeo => r#"AEO (AI ENGINE OPTIMIZATION)
+            Section::Aeo => {
+                r#"AEO (AI ENGINE OPTIMIZATION)
 
 Analyzes how well your content is optimized for AI agents, LLMs, and AI-powered search.
 
@@ -354,9 +371,11 @@ WHY IT MATTERS:
 • AI search (Perplexity, SearchGPT) is growing
 • LLMs power customer service bots
 • Structured data helps AI understand context
-• llms.txt adoption is increasing"#,
+• llms.txt adoption is increasing"#
+            }
 
-            Section::Content => r#"CONTENT ANALYSIS
+            Section::Content => {
+                r#"CONTENT ANALYSIS
 
 Analyzes the response content characteristics including type, size, compression, and caching.
 
@@ -391,7 +410,8 @@ WHY IT MATTERS:
 • Compression reduces bandwidth 60-80%
 • Caching eliminates redundant requests
 • Proper content-types prevent sniffing attacks
-• Resource hints improve perceived performance"#,
+• Resource hints improve perceived performance"#
+            }
         }
     }
 }
@@ -528,7 +548,12 @@ impl App {
             ]),
             Line::from(vec![
                 Span::styled("Time: ", Style::default().bold()),
-                Span::raw(self.result.timestamp.format("%Y-%m-%d %H:%M:%S UTC").to_string()),
+                Span::raw(
+                    self.result
+                        .timestamp
+                        .format("%Y-%m-%d %H:%M:%S UTC")
+                        .to_string(),
+                ),
             ]),
             Line::from(""),
             Line::from(vec![
@@ -539,7 +564,10 @@ impl App {
         ];
 
         // Summary of checks
-        lines.push(Line::from(Span::styled("Checks Performed:", Style::default().bold().underlined())));
+        lines.push(Line::from(Span::styled(
+            "Checks Performed:",
+            Style::default().bold().underlined(),
+        )));
         lines.push(Line::from(""));
 
         if self.result.tls.is_some() {
@@ -548,7 +576,10 @@ impl App {
             let color = if tls.valid { Color::Green } else { Color::Red };
             lines.push(Line::from(vec![
                 Span::styled(format!("  {} ", status), Style::default().fg(color)),
-                Span::raw(format!("TLS: {} (expires in {} days)", tls.tls_version, tls.expires_in_days)),
+                Span::raw(format!(
+                    "TLS: {} (expires in {} days)",
+                    tls.tls_version, tls.expires_in_days
+                )),
             ]));
         }
 
@@ -556,7 +587,10 @@ impl App {
             let http = self.result.http.as_ref().unwrap();
             lines.push(Line::from(vec![
                 Span::styled("  ✓ ", Style::default().fg(Color::Green)),
-                Span::raw(format!("HTTP: {} (status {})", http.http_version, http.status_code)),
+                Span::raw(format!(
+                    "HTTP: {} (status {})",
+                    http.http_version, http.status_code
+                )),
             ]));
         }
 
@@ -564,7 +598,11 @@ impl App {
             let headers = self.result.headers.as_ref().unwrap();
             let issue_count = headers.issues.len();
             let status = if issue_count == 0 { "✓" } else { "!" };
-            let color = if issue_count == 0 { Color::Green } else { Color::Yellow };
+            let color = if issue_count == 0 {
+                Color::Green
+            } else {
+                Color::Yellow
+            };
             lines.push(Line::from(vec![
                 Span::styled(format!("  {} ", status), Style::default().fg(color)),
                 Span::raw(format!("Security Headers: {} issues", issue_count)),
@@ -581,7 +619,13 @@ impl App {
 
         if self.result.seo.is_some() {
             let seo = self.result.seo.as_ref().unwrap();
-            let color = if seo.score >= 80 { Color::Green } else if seo.score >= 60 { Color::Yellow } else { Color::Red };
+            let color = if seo.score >= 80 {
+                Color::Green
+            } else if seo.score >= 60 {
+                Color::Yellow
+            } else {
+                Color::Red
+            };
             lines.push(Line::from(vec![
                 Span::styled("  ◉ ", Style::default().fg(color)),
                 Span::raw(format!("SEO Score: {}/100", seo.score)),
@@ -590,7 +634,13 @@ impl App {
 
         if self.result.aeo.is_some() {
             let aeo = self.result.aeo.as_ref().unwrap();
-            let color = if aeo.score >= 80 { Color::Green } else if aeo.score >= 60 { Color::Yellow } else { Color::Red };
+            let color = if aeo.score >= 80 {
+                Color::Green
+            } else if aeo.score >= 60 {
+                Color::Yellow
+            } else {
+                Color::Red
+            };
             lines.push(Line::from(vec![
                 Span::styled("  ◉ ", Style::default().fg(color)),
                 Span::raw(format!("AEO Score: {}/100 ({})", aeo.score, aeo.readiness)),
@@ -599,7 +649,10 @@ impl App {
 
         if !self.result.errors.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Errors:", Style::default().fg(Color::Red).bold())));
+            lines.push(Line::from(Span::styled(
+                "Errors:",
+                Style::default().fg(Color::Red).bold(),
+            )));
             for error in &self.result.errors {
                 lines.push(Line::from(vec![
                     Span::styled("  ✗ ", Style::default().fg(Color::Red)),
@@ -635,18 +688,22 @@ impl App {
             ]),
             Line::from(vec![
                 Span::styled("ALPN: ", Style::default().bold()),
-                Span::raw(tls.alpn_negotiated.clone().unwrap_or_else(|| "none".to_string())),
+                Span::raw(
+                    tls.alpn_negotiated
+                        .clone()
+                        .unwrap_or_else(|| "none".to_string()),
+                ),
             ]),
             Line::from(""),
-            Line::from(Span::styled("Certificate:", Style::default().bold().underlined())),
+            Line::from(Span::styled(
+                "Certificate:",
+                Style::default().bold().underlined(),
+            )),
             Line::from(vec![
                 Span::raw("  Subject: "),
                 Span::raw(tls.subject.clone()),
             ]),
-            Line::from(vec![
-                Span::raw("  Issuer: "),
-                Span::raw(tls.issuer.clone()),
-            ]),
+            Line::from(vec![Span::raw("  Issuer: "), Span::raw(tls.issuer.clone())]),
             Line::from(vec![
                 Span::raw("  Chain: "),
                 Span::raw(format!("{} certificates", tls.chain_length)),
@@ -667,10 +724,15 @@ impl App {
 
         if !tls.issues.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Issues:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Issues:",
+                Style::default().bold().underlined(),
+            )));
             for issue in &tls.issues {
                 let severity_style = match issue.severity {
-                    crate::checks::tls::Severity::Critical => Style::default().fg(Color::Red).bold(),
+                    crate::checks::tls::Severity::Critical => {
+                        Style::default().fg(Color::Red).bold()
+                    }
                     crate::checks::tls::Severity::High => Style::default().fg(Color::Red),
                     crate::checks::tls::Severity::Medium => Style::default().fg(Color::Yellow),
                     crate::checks::tls::Severity::Low => Style::default().fg(Color::Gray),
@@ -719,17 +781,29 @@ impl App {
 
         if !http.redirect_chain.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Redirect Chain:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Redirect Chain:",
+                Style::default().bold().underlined(),
+            )));
             for redirect in &http.redirect_chain {
-                lines.push(Line::from(format!("  {} → {}", redirect.status, redirect.url)));
+                lines.push(Line::from(format!(
+                    "  {} → {}",
+                    redirect.status, redirect.url
+                )));
             }
         }
 
         if !http.issues.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Issues:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Issues:",
+                Style::default().bold().underlined(),
+            )));
             for issue in &http.issues {
-                lines.push(Line::from(format!("  [{:?}] {}", issue.severity, issue.message)));
+                lines.push(Line::from(format!(
+                    "  [{:?}] {}",
+                    issue.severity, issue.message
+                )));
             }
         }
 
@@ -748,12 +822,17 @@ impl App {
             Span::styled("HSTS: ", Style::default().bold()),
             match &headers.hsts {
                 Some(hsts) => Span::styled(
-                    format!("max-age={}{}{}",
+                    format!(
+                        "max-age={}{}{}",
                         hsts.max_age,
-                        if hsts.include_subdomains { ", includeSubDomains" } else { "" },
+                        if hsts.include_subdomains {
+                            ", includeSubDomains"
+                        } else {
+                            ""
+                        },
                         if hsts.preload { ", preload" } else { "" }
                     ),
-                    Style::default().fg(Color::Green)
+                    Style::default().fg(Color::Green),
                 ),
                 None => Span::styled("Missing", Style::default().fg(Color::Red)),
             },
@@ -794,9 +873,15 @@ impl App {
 
         if !headers.issues.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Issues:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Issues:",
+                Style::default().bold().underlined(),
+            )));
             for issue in &headers.issues {
-                lines.push(Line::from(format!("  [{:?}] {}", issue.severity, issue.message)));
+                lines.push(Line::from(format!(
+                    "  [{:?}] {}",
+                    issue.severity, issue.message
+                )));
             }
         }
 
@@ -841,7 +926,7 @@ impl App {
                 Span::styled("Total:         ", Style::default().bold()),
                 Span::styled(
                     format!("{}ms", latency.total.as_millis()),
-                    Style::default().bold()
+                    Style::default().bold(),
                 ),
             ]),
         ]
@@ -862,10 +947,16 @@ impl App {
                     Span::styled("Found", Style::default().fg(Color::Green)),
                 ]));
                 if !r.disallowed.is_empty() {
-                    lines.push(Line::from(format!("  {} disallowed paths", r.disallowed.len())));
+                    lines.push(Line::from(format!(
+                        "  {} disallowed paths",
+                        r.disallowed.len()
+                    )));
                 }
                 if !r.sitemaps.is_empty() {
-                    lines.push(Line::from(format!("  {} sitemaps referenced", r.sitemaps.len())));
+                    lines.push(Line::from(format!(
+                        "  {} sitemaps referenced",
+                        r.sitemaps.len()
+                    )));
                 }
             }
             _ => {
@@ -881,7 +972,10 @@ impl App {
             Some(s) if s.exists => {
                 lines.push(Line::from(vec![
                     Span::styled("Sitemap: ", Style::default().bold()),
-                    Span::styled(format!("{} entries", s.entry_count), Style::default().fg(Color::Green)),
+                    Span::styled(
+                        format!("{} entries", s.entry_count),
+                        Style::default().fg(Color::Green),
+                    ),
                 ]));
             }
             _ => {
@@ -895,7 +989,10 @@ impl App {
         // Discovered paths
         if !discovery.discovered_paths.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Discovered Paths:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Discovered Paths:",
+                Style::default().bold().underlined(),
+            )));
             for path in &discovery.discovered_paths {
                 let status_style = if path.status_code == 200 {
                     Style::default().fg(Color::Green)
@@ -929,7 +1026,13 @@ impl App {
             lines.push(Line::from(vec![
                 Span::styled("Server: ", Style::default().bold()),
                 Span::raw(server.name.clone()),
-                Span::raw(server.version.as_ref().map(|v| format!(" {}", v)).unwrap_or_default()),
+                Span::raw(
+                    server
+                        .version
+                        .as_ref()
+                        .map(|v| format!(" {}", v))
+                        .unwrap_or_default(),
+                ),
             ]));
         }
 
@@ -938,14 +1041,22 @@ impl App {
             lines.push(Line::from(vec![
                 Span::styled("CDN: ", Style::default().bold()),
                 Span::styled(cdn.name.clone(), Style::default().fg(Color::Green)),
-                Span::raw(cdn.edge_location.as_ref().map(|e| format!(" ({})", e)).unwrap_or_default()),
+                Span::raw(
+                    cdn.edge_location
+                        .as_ref()
+                        .map(|e| format!(" ({})", e))
+                        .unwrap_or_default(),
+                ),
             ]));
         }
 
         // Frameworks
         if !tech.frameworks.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Frameworks:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Frameworks:",
+                Style::default().bold().underlined(),
+            )));
             for fw in &tech.frameworks {
                 lines.push(Line::from(format!(
                     "  {} {} ({}% confidence)",
@@ -993,7 +1104,10 @@ impl App {
             let status = if title.length_optimal { "OK" } else { "!" };
             lines.push(Line::from(vec![
                 Span::styled("Title: ", Style::default().bold()),
-                Span::raw(format!("[{}] {} ({} chars)", status, title.content, title.length)),
+                Span::raw(format!(
+                    "[{}] {} ({} chars)",
+                    status, title.content, title.length
+                )),
             ]));
         }
 
@@ -1007,7 +1121,11 @@ impl App {
         }
 
         // Open Graph
-        let og_status = if seo.open_graph.is_complete { "Complete" } else { "Incomplete" };
+        let og_status = if seo.open_graph.is_complete {
+            "Complete"
+        } else {
+            "Incomplete"
+        };
         lines.push(Line::from(vec![
             Span::styled("Open Graph: ", Style::default().bold()),
             Span::raw(og_status),
@@ -1021,9 +1139,15 @@ impl App {
 
         if !seo.issues.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Issues:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Issues:",
+                Style::default().bold().underlined(),
+            )));
             for issue in &seo.issues {
-                lines.push(Line::from(format!("  [{:?}] {}", issue.severity, issue.message)));
+                lines.push(Line::from(format!(
+                    "  [{:?}] {}",
+                    issue.severity, issue.message
+                )));
             }
         }
 
@@ -1058,11 +1182,14 @@ impl App {
                 Span::styled("JSON-LD: ", Style::default().bold()),
                 Span::styled(
                     format!("{} blocks", aeo.structured_data.json_ld_blocks.len()),
-                    Style::default().fg(Color::Green)
+                    Style::default().fg(Color::Green),
                 ),
             ]));
             if !aeo.structured_data.schema_types.is_empty() {
-                lines.push(Line::from(format!("  Types: {}", aeo.structured_data.schema_types.join(", "))));
+                lines.push(Line::from(format!(
+                    "  Types: {}",
+                    aeo.structured_data.schema_types.join(", ")
+                )));
             }
         } else {
             lines.push(Line::from(vec![
@@ -1095,9 +1222,15 @@ impl App {
 
         if !aeo.issues.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Issues:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Issues:",
+                Style::default().bold().underlined(),
+            )));
             for issue in &aeo.issues {
-                lines.push(Line::from(format!("  [{:?}] {}", issue.severity, issue.message)));
+                lines.push(Line::from(format!(
+                    "  [{:?}] {}",
+                    issue.severity, issue.message
+                )));
             }
         }
 
@@ -1114,13 +1247,22 @@ impl App {
         // Content type
         lines.push(Line::from(vec![
             Span::styled("Content-Type: ", Style::default().bold()),
-            Span::raw(content.content_type.mime_type.clone().unwrap_or_else(|| "unknown".to_string())),
+            Span::raw(
+                content
+                    .content_type
+                    .mime_type
+                    .clone()
+                    .unwrap_or_else(|| "unknown".to_string()),
+            ),
         ]));
 
         // Size
         lines.push(Line::from(vec![
             Span::styled("Size: ", Style::default().bold()),
-            Span::raw(format!("{} ({})", content.size.body_size_formatted, content.size.size_category)),
+            Span::raw(format!(
+                "{} ({})",
+                content.size.body_size_formatted, content.size.size_category
+            )),
         ]));
 
         // Compression
@@ -1128,11 +1270,18 @@ impl App {
             Span::styled("Compression: ", Style::default().bold()),
             if content.compression.is_compressed {
                 Span::styled(
-                    content.compression.algorithm.clone().unwrap_or_else(|| "yes".to_string()),
-                    Style::default().fg(Color::Green)
+                    content
+                        .compression
+                        .algorithm
+                        .clone()
+                        .unwrap_or_else(|| "yes".to_string()),
+                    Style::default().fg(Color::Green),
                 )
             } else if content.compression.should_compress {
-                Span::styled("Recommended but not enabled", Style::default().fg(Color::Yellow))
+                Span::styled(
+                    "Recommended but not enabled",
+                    Style::default().fg(Color::Yellow),
+                )
             } else {
                 Span::raw("Not applicable")
             },
@@ -1165,9 +1314,15 @@ impl App {
 
         if !content.issues.is_empty() {
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("Issues:", Style::default().bold().underlined())));
+            lines.push(Line::from(Span::styled(
+                "Issues:",
+                Style::default().bold().underlined(),
+            )));
             for issue in &content.issues {
-                lines.push(Line::from(format!("  [{:?}] {}", issue.severity, issue.message)));
+                lines.push(Line::from(format!(
+                    "  [{:?}] {}",
+                    issue.severity, issue.message
+                )));
             }
         }
 
@@ -1221,7 +1376,11 @@ fn ui(f: &mut Frame, app: &mut App) {
         .constraints([
             Constraint::Length(24),
             Constraint::Min(40),
-            if app.show_help { Constraint::Percentage(40) } else { Constraint::Length(0) },
+            if app.show_help {
+                Constraint::Percentage(40)
+            } else {
+                Constraint::Length(0)
+            },
         ])
         .split(f.area());
 
@@ -1229,14 +1388,16 @@ fn ui(f: &mut Frame, app: &mut App) {
     let sections: Vec<ListItem> = app
         .sections
         .iter()
-        .map(|s| {
-            ListItem::new(format!(" {} {}", s.icon(), s.name()))
-        })
+        .map(|s| ListItem::new(format!(" {} {}", s.icon(), s.name())))
         .collect();
 
     let section_list = List::new(sections)
         .block(Block::default().borders(Borders::ALL).title(" Sections "))
-        .highlight_style(Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD))
+        .highlight_style(
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        )
         .highlight_symbol("▶ ");
 
     f.render_stateful_widget(section_list, chunks[0], &mut app.list_state);
@@ -1245,9 +1406,11 @@ fn ui(f: &mut Frame, app: &mut App) {
     let current = app.current_section();
     let content_lines = app.section_content(current);
 
-    let detail_block = Block::default()
-        .borders(Borders::ALL)
-        .title(format!(" {} {} ", current.icon(), current.name()));
+    let detail_block = Block::default().borders(Borders::ALL).title(format!(
+        " {} {} ",
+        current.icon(),
+        current.name()
+    ));
 
     let detail = Paragraph::new(content_lines)
         .block(detail_block)

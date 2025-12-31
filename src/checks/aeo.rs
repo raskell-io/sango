@@ -285,7 +285,10 @@ pub async fn check_aeo(target: &str, timeout: Duration) -> Result<AeoResult> {
     // Fetch main page for content analysis
     let response = client
         .get(&base_url)
-        .header("User-Agent", "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)")
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)",
+        )
         .send()
         .await
         .context(format!("Failed to fetch {}", base_url))?;
@@ -306,10 +309,20 @@ pub async fn check_aeo(target: &str, timeout: Duration) -> Result<AeoResult> {
     let api_discovery = check_api_discovery(&client, &base_url, &document).await;
 
     // Generate issues
-    let issues = generate_issues(&structured_data, &ai_endpoints, &content_structure, &api_discovery);
+    let issues = generate_issues(
+        &structured_data,
+        &ai_endpoints,
+        &content_structure,
+        &api_discovery,
+    );
 
     // Calculate score
-    let score = calculate_score(&structured_data, &ai_endpoints, &content_structure, &api_discovery);
+    let score = calculate_score(
+        &structured_data,
+        &ai_endpoints,
+        &content_structure,
+        &api_discovery,
+    );
 
     // Determine readiness level
     let readiness = determine_readiness(score);
@@ -361,7 +374,10 @@ fn analyze_structured_data(document: &Html, _body: &str) -> StructuredDataAnalys
                 if t_lower.contains("webpage") {
                     analysis.has_webpage = true;
                 }
-                if t_lower.contains("article") || t_lower.contains("blogposting") || t_lower.contains("newsarticle") {
+                if t_lower.contains("article")
+                    || t_lower.contains("blogposting")
+                    || t_lower.contains("newsarticle")
+                {
                     analysis.has_article = true;
                 }
                 if t_lower.contains("product") {
@@ -391,14 +407,20 @@ fn analyze_structured_data(document: &Html, _body: &str) -> StructuredDataAnalys
 
     // Validate structured data
     if analysis.json_ld_blocks.is_empty() {
-        analysis.validation_issues.push("No JSON-LD structured data found".to_string());
+        analysis
+            .validation_issues
+            .push("No JSON-LD structured data found".to_string());
     } else {
         for (i, block) in analysis.json_ld_blocks.iter().enumerate() {
             if !block.is_valid_json {
-                analysis.validation_issues.push(format!("JSON-LD block {} has invalid JSON", i + 1));
+                analysis
+                    .validation_issues
+                    .push(format!("JSON-LD block {} has invalid JSON", i + 1));
             }
             if !block.has_context {
-                analysis.validation_issues.push(format!("JSON-LD block {} missing @context", i + 1));
+                analysis
+                    .validation_issues
+                    .push(format!("JSON-LD block {} missing @context", i + 1));
             }
         }
     }
@@ -422,7 +444,15 @@ fn parse_json_ld(content: &str) -> JsonLdBlock {
 
     // Extract key properties
     let mut properties = Vec::new();
-    for prop in ["name", "description", "url", "image", "author", "datePublished", "mainEntity"] {
+    for prop in [
+        "name",
+        "description",
+        "url",
+        "image",
+        "author",
+        "datePublished",
+        "mainEntity",
+    ] {
         if trimmed.contains(&format!("\"{}\"", prop)) {
             properties.push(prop.to_string());
         }
@@ -501,10 +531,12 @@ async fn check_ai_endpoints(client: &Client, base_url: &str) -> AiEndpoints {
     endpoints.llms_full_txt = check_llms_txt(client, &format!("{}/llms-full.txt", base_url)).await;
 
     // Check ai-plugin.json
-    endpoints.ai_plugin = check_ai_plugin(client, &format!("{}/.well-known/ai-plugin.json", base_url)).await;
+    endpoints.ai_plugin =
+        check_ai_plugin(client, &format!("{}/.well-known/ai-plugin.json", base_url)).await;
 
     // Check robots.txt for AI rules
-    endpoints.robots_ai_rules = check_robots_ai_rules(client, &format!("{}/robots.txt", base_url)).await;
+    endpoints.robots_ai_rules =
+        check_robots_ai_rules(client, &format!("{}/robots.txt", base_url)).await;
 
     endpoints
 }
@@ -554,7 +586,8 @@ async fn check_llms_txt(client: &Client, url: &str) -> Option<LlmsTxtInfo> {
         } else if trimmed.starts_with("## ") {
             section_count += 1;
         } else if trimmed.starts_with("- ") || trimmed.starts_with("* ") {
-            if trimmed.contains("http://") || trimmed.contains("https://") || trimmed.contains("](") {
+            if trimmed.contains("http://") || trimmed.contains("https://") || trimmed.contains("](")
+            {
                 link_count += 1;
             }
         }
@@ -609,42 +642,42 @@ async fn check_ai_plugin(client: &Client, url: &str) -> Option<AiPluginInfo> {
     let parsed: Result<serde_json::Value, _> = serde_json::from_str(&content);
 
     match parsed {
-        Ok(json) => {
-            Some(AiPluginInfo {
-                exists: true,
-                status_code,
-                name: json.get("name_for_human")
-                    .or_else(|| json.get("name"))
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()),
-                description: json.get("description_for_human")
-                    .or_else(|| json.get("description"))
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()),
-                has_auth: json.get("auth").is_some(),
-                api_type: json.get("api")
-                    .and_then(|api| api.get("type"))
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()),
-                api_url: json.get("api")
-                    .and_then(|api| api.get("url"))
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()),
-                is_valid: true,
-            })
-        }
-        Err(_) => {
-            Some(AiPluginInfo {
-                exists: true,
-                status_code,
-                name: None,
-                description: None,
-                has_auth: false,
-                api_type: None,
-                api_url: None,
-                is_valid: false,
-            })
-        }
+        Ok(json) => Some(AiPluginInfo {
+            exists: true,
+            status_code,
+            name: json
+                .get("name_for_human")
+                .or_else(|| json.get("name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            description: json
+                .get("description_for_human")
+                .or_else(|| json.get("description"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            has_auth: json.get("auth").is_some(),
+            api_type: json
+                .get("api")
+                .and_then(|api| api.get("type"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            api_url: json
+                .get("api")
+                .and_then(|api| api.get("url"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            is_valid: true,
+        }),
+        Err(_) => Some(AiPluginInfo {
+            exists: true,
+            status_code,
+            name: None,
+            description: None,
+            has_auth: false,
+            api_type: None,
+            api_url: None,
+            is_valid: false,
+        }),
     }
 }
 
@@ -677,7 +710,9 @@ async fn check_robots_ai_rules(client: &Client, url: &str) -> Option<RobotsAiRul
             let agent = trimmed[11..].trim().to_string();
 
             // Check if this is an AI-related agent
-            is_ai_agent = AI_BOT_AGENTS.iter().any(|bot| agent.contains(&bot.to_lowercase()));
+            is_ai_agent = AI_BOT_AGENTS
+                .iter()
+                .any(|bot| agent.contains(&bot.to_lowercase()));
 
             if is_ai_agent {
                 rules.ai_user_agents.push(agent.clone());
@@ -689,11 +724,19 @@ async fn check_robots_ai_rules(client: &Client, url: &str) -> Option<RobotsAiRul
                 if path == "/" || path.is_empty() {
                     rules.blocks_ai_bots = true;
                 }
-                rules.rules.push(format!("{}: Disallow: {}", current_agent.as_ref().unwrap(), path));
+                rules.rules.push(format!(
+                    "{}: Disallow: {}",
+                    current_agent.as_ref().unwrap(),
+                    path
+                ));
             } else if trimmed.starts_with("allow:") {
                 rules.allows_ai_bots = true;
                 let path = trimmed[6..].trim();
-                rules.rules.push(format!("{}: Allow: {}", current_agent.as_ref().unwrap(), path));
+                rules.rules.push(format!(
+                    "{}: Allow: {}",
+                    current_agent.as_ref().unwrap(),
+                    path
+                ));
             }
         }
     }
@@ -713,19 +756,25 @@ fn analyze_content_structure(document: &Html, body: &str) -> ContentStructure {
     let text_content = extract_text_content(document);
     let text_len = text_content.len() as f32;
     let html_len = body.len() as f32;
-    structure.text_ratio = if html_len > 0.0 { text_len / html_len } else { 0.0 };
+    structure.text_ratio = if html_len > 0.0 {
+        text_len / html_len
+    } else {
+        0.0
+    };
 
     // Word count and reading time
     structure.word_count = text_content.split_whitespace().count();
     structure.reading_time_minutes = ((structure.word_count as f32 / 200.0).ceil() as u8).max(1);
 
     // Check for semantic elements
-    structure.has_main_content = check_element_exists(document, "main") || check_element_exists(document, "article");
+    structure.has_main_content =
+        check_element_exists(document, "main") || check_element_exists(document, "article");
     structure.has_article = check_element_exists(document, "article");
     structure.has_sections = check_element_exists(document, "section");
     structure.has_nav = check_element_exists(document, "nav");
     structure.has_aside = check_element_exists(document, "aside");
-    structure.has_header_footer = check_element_exists(document, "header") && check_element_exists(document, "footer");
+    structure.has_header_footer =
+        check_element_exists(document, "header") && check_element_exists(document, "footer");
     structure.has_figures = check_element_exists(document, "figure");
 
     // Count content elements
@@ -737,9 +786,8 @@ fn analyze_content_structure(document: &Html, body: &str) -> ContentStructure {
     structure.semantic_score = calculate_semantic_score(&structure);
 
     // Determine if content is easily extractable
-    structure.is_extractable = structure.text_ratio > 0.1
-        && structure.has_main_content
-        && structure.word_count > 50;
+    structure.is_extractable =
+        structure.text_ratio > 0.1 && structure.has_main_content && structure.word_count > 50;
 
     structure
 }
@@ -782,14 +830,30 @@ fn count_elements(document: &Html, selector_str: &str) -> usize {
 fn calculate_semantic_score(structure: &ContentStructure) -> u8 {
     let mut score = 0u8;
 
-    if structure.has_main_content { score += 20; }
-    if structure.has_article { score += 15; }
-    if structure.has_sections { score += 15; }
-    if structure.has_nav { score += 10; }
-    if structure.has_header_footer { score += 15; }
-    if structure.has_aside { score += 5; }
-    if structure.has_figures { score += 10; }
-    if structure.text_ratio > 0.15 { score += 10; }
+    if structure.has_main_content {
+        score += 20;
+    }
+    if structure.has_article {
+        score += 15;
+    }
+    if structure.has_sections {
+        score += 15;
+    }
+    if structure.has_nav {
+        score += 10;
+    }
+    if structure.has_header_footer {
+        score += 15;
+    }
+    if structure.has_aside {
+        score += 5;
+    }
+    if structure.has_figures {
+        score += 10;
+    }
+    if structure.text_ratio > 0.15 {
+        score += 10;
+    }
 
     score.min(100)
 }
@@ -836,14 +900,18 @@ async fn check_api_discovery(client: &Client, base_url: &str, document: &Html) -
                 let href_lower = href.to_lowercase();
                 let text = element.text().collect::<String>().to_lowercase();
 
-                if (href_lower.contains("/docs") || href_lower.contains("/documentation") ||
-                    text.contains("documentation") || text.contains("api docs"))
-                    && discovery.docs_url.is_none() {
+                if (href_lower.contains("/docs")
+                    || href_lower.contains("/documentation")
+                    || text.contains("documentation")
+                    || text.contains("api docs"))
+                    && discovery.docs_url.is_none()
+                {
                     discovery.docs_url = Some(href.to_string());
                 }
 
                 if (href_lower.contains("/developer") || text.contains("developer"))
-                    && discovery.developer_url.is_none() {
+                    && discovery.developer_url.is_none()
+                {
                     discovery.developer_url = Some(href.to_string());
                 }
             }
@@ -876,12 +944,14 @@ async fn check_openapi(client: &Client, url: &str) -> Option<OpenApiInfo> {
 
     match parsed {
         Ok(json) => {
-            let version = json.get("openapi")
+            let version = json
+                .get("openapi")
                 .or_else(|| json.get("swagger"))
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
 
-            let title = json.get("info")
+            let title = json
+                .get("info")
                 .and_then(|info| info.get("title"))
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
@@ -960,7 +1030,9 @@ fn generate_issues(
             severity: Severity::Medium,
             category: "structured-data".to_string(),
             message: "No JSON-LD structured data found".to_string(),
-            recommendation: Some("Add JSON-LD with Schema.org vocabulary for better AI understanding".to_string()),
+            recommendation: Some(
+                "Add JSON-LD with Schema.org vocabulary for better AI understanding".to_string(),
+            ),
         });
     } else {
         if !structured_data.has_organization && !structured_data.has_website {
@@ -991,7 +1063,9 @@ fn generate_issues(
                 severity: Severity::Low,
                 category: "ai-endpoints".to_string(),
                 message: "No llms.txt file found".to_string(),
-                recommendation: Some("Add /llms.txt to provide AI-friendly site summary".to_string()),
+                recommendation: Some(
+                    "Add /llms.txt to provide AI-friendly site summary".to_string(),
+                ),
             });
         }
         _ => {}
@@ -1002,8 +1076,14 @@ fn generate_issues(
             issues.push(AeoIssue {
                 severity: Severity::Medium,
                 category: "ai-access".to_string(),
-                message: format!("AI bots are blocked in robots.txt ({})", rules.ai_user_agents.join(", ")),
-                recommendation: Some("Consider allowing AI bots if you want AI-powered search visibility".to_string()),
+                message: format!(
+                    "AI bots are blocked in robots.txt ({})",
+                    rules.ai_user_agents.join(", ")
+                ),
+                recommendation: Some(
+                    "Consider allowing AI bots if you want AI-powered search visibility"
+                        .to_string(),
+                ),
             });
         }
     }
@@ -1014,7 +1094,9 @@ fn generate_issues(
             severity: Severity::Medium,
             category: "content-structure".to_string(),
             message: "No main content element found (<main> or <article>)".to_string(),
-            recommendation: Some("Use semantic HTML elements for better content extraction".to_string()),
+            recommendation: Some(
+                "Use semantic HTML elements for better content extraction".to_string(),
+            ),
         });
     }
 
@@ -1022,7 +1104,10 @@ fn generate_issues(
         issues.push(AeoIssue {
             severity: Severity::Low,
             category: "content-structure".to_string(),
-            message: format!("Low text-to-HTML ratio ({:.1}%)", content_structure.text_ratio * 100.0),
+            message: format!(
+                "Low text-to-HTML ratio ({:.1}%)",
+                content_structure.text_ratio * 100.0
+            ),
             recommendation: Some("Increase meaningful text content relative to markup".to_string()),
         });
     }
@@ -1031,8 +1116,13 @@ fn generate_issues(
         issues.push(AeoIssue {
             severity: Severity::Low,
             category: "content-structure".to_string(),
-            message: format!("Low semantic HTML score ({}%)", content_structure.semantic_score),
-            recommendation: Some("Use more semantic HTML elements (article, section, nav, etc.)".to_string()),
+            message: format!(
+                "Low semantic HTML score ({}%)",
+                content_structure.semantic_score
+            ),
+            recommendation: Some(
+                "Use more semantic HTML elements (article, section, nav, etc.)".to_string(),
+            ),
         });
     }
 
@@ -1080,7 +1170,12 @@ fn calculate_score(
         }
     }
     // Bonus for not blocking AI bots
-    if ai_endpoints.robots_ai_rules.as_ref().map(|r| !r.blocks_ai_bots).unwrap_or(true) {
+    if ai_endpoints
+        .robots_ai_rules
+        .as_ref()
+        .map(|r| !r.blocks_ai_bots)
+        .unwrap_or(true)
+    {
         score += 5;
     }
 
@@ -1117,7 +1212,8 @@ mod tests {
 
     #[test]
     fn test_parse_json_ld() {
-        let content = r#"{"@context": "https://schema.org", "@type": "Organization", "name": "Test"}"#;
+        let content =
+            r#"{"@context": "https://schema.org", "@type": "Organization", "name": "Test"}"#;
         let block = parse_json_ld(content);
 
         assert!(block.is_valid_json);
@@ -1205,7 +1301,12 @@ mod tests {
 
         let api_discovery = ApiDiscovery::default();
 
-        let score = calculate_score(&structured_data, &ai_endpoints, &content_structure, &api_discovery);
+        let score = calculate_score(
+            &structured_data,
+            &ai_endpoints,
+            &content_structure,
+            &api_discovery,
+        );
         assert!(score >= 60);
     }
 }

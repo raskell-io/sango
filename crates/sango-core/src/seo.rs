@@ -168,18 +168,32 @@ pub fn analyze_seo(html: &str, page_url: &str, config: SeoConfig) -> SeoAnalysis
     let open_graph = extract_open_graph(&document);
     let twitter_card = extract_twitter_card(&document);
     let headings = extract_headings(&document);
-    let technical = extract_technical_seo(&document, page_url, document_size, config.content_language);
+    let technical =
+        extract_technical_seo(&document, page_url, document_size, config.content_language);
     let i18n = extract_i18n(&document);
     let structured_data = extract_structured_data(&document, html);
 
     let issues = generate_issues(
-        &title, &description, &canonical, &robots,
-        &open_graph, &twitter_card, &headings, &technical, &structured_data,
+        &title,
+        &description,
+        &canonical,
+        &robots,
+        &open_graph,
+        &twitter_card,
+        &headings,
+        &technical,
+        &structured_data,
     );
 
     let score = calculate_score(
-        &title, &description, &canonical, &robots,
-        &open_graph, &headings, &technical, &structured_data,
+        &title,
+        &description,
+        &canonical,
+        &robots,
+        &open_graph,
+        &headings,
+        &technical,
+        &structured_data,
     );
 
     SeoAnalysis {
@@ -244,9 +258,14 @@ fn extract_canonical(document: &Html, page_url: &str) -> Option<CanonicalInfo> {
     }
 
     let is_absolute = url.starts_with("http://") || url.starts_with("https://");
-    let is_self_referencing = normalize_url_for_comparison(&url) == normalize_url_for_comparison(page_url);
+    let is_self_referencing =
+        normalize_url_for_comparison(&url) == normalize_url_for_comparison(page_url);
 
-    Some(CanonicalInfo { url, is_self_referencing, is_absolute })
+    Some(CanonicalInfo {
+        url,
+        is_self_referencing,
+        is_absolute,
+    })
 }
 
 fn normalize_url_for_comparison(url: &str) -> String {
@@ -302,7 +321,11 @@ fn extract_open_graph(document: &Html) -> OpenGraphInfo {
     if let Ok(selector) = Selector::parse("meta[property^='og:']") {
         for element in document.select(&selector) {
             let property = element.value().attr("property").unwrap_or_default();
-            let content = element.value().attr("content").unwrap_or_default().to_string();
+            let content = element
+                .value()
+                .attr("content")
+                .unwrap_or_default()
+                .to_string();
 
             match property {
                 "og:title" => og.title = Some(content),
@@ -326,7 +349,11 @@ fn extract_twitter_card(document: &Html) -> TwitterCardInfo {
     if let Ok(selector) = Selector::parse("meta[name^='twitter:']") {
         for element in document.select(&selector) {
             let name = element.value().attr("name").unwrap_or_default();
-            let content = element.value().attr("content").unwrap_or_default().to_string();
+            let content = element
+                .value()
+                .attr("content")
+                .unwrap_or_default()
+                .to_string();
 
             match name {
                 "twitter:card" => tc.card_type = Some(content),
@@ -495,9 +522,9 @@ fn extract_structured_data(document: &Html, body: &str) -> StructuredDataInfo {
                 if let Some(colon) = after.find(':') {
                     let after_colon = &after[colon + 1..];
                     let trimmed = after_colon.trim_start();
-                    if trimmed.starts_with('"') {
-                        if let Some(end) = trimmed[1..].find('"') {
-                            let type_value = &trimmed[1..end + 1];
+                    if let Some(stripped) = trimmed.strip_prefix('"') {
+                        if let Some(end) = stripped.find('"') {
+                            let type_value = &stripped[..end];
                             if !sd.json_ld_types.contains(&type_value.to_string()) {
                                 sd.json_ld_types.push(type_value.to_string());
                             }
@@ -514,6 +541,7 @@ fn extract_structured_data(document: &Html, body: &str) -> StructuredDataInfo {
     sd
 }
 
+#[allow(clippy::too_many_arguments)]
 fn generate_issues(
     title: &Option<TitleInfo>,
     description: &Option<DescriptionInfo>,
@@ -529,86 +557,147 @@ fn generate_issues(
 
     // Title
     match title {
-        None => issues.push(Issue::new(Severity::High, "title", "Missing title tag")
-            .with_recommendation("Add a unique, descriptive title tag (50-60 characters)")),
-        Some(t) if t.length < 30 => issues.push(Issue::new(Severity::Medium, "title",
-            format!("Title too short ({} characters)", t.length))
-            .with_recommendation("Aim for 50-60 characters for optimal display")),
-        Some(t) if t.may_truncate => issues.push(Issue::new(Severity::Low, "title",
-            format!("Title may truncate in SERPs ({} characters)", t.length))
-            .with_recommendation("Keep title under 60 characters")),
+        None => issues.push(
+            Issue::new(Severity::High, "title", "Missing title tag")
+                .with_recommendation("Add a unique, descriptive title tag (50-60 characters)"),
+        ),
+        Some(t) if t.length < 30 => issues.push(
+            Issue::new(
+                Severity::Medium,
+                "title",
+                format!("Title too short ({} characters)", t.length),
+            )
+            .with_recommendation("Aim for 50-60 characters for optimal display"),
+        ),
+        Some(t) if t.may_truncate => issues.push(
+            Issue::new(
+                Severity::Low,
+                "title",
+                format!("Title may truncate in SERPs ({} characters)", t.length),
+            )
+            .with_recommendation("Keep title under 60 characters"),
+        ),
         _ => {}
     }
 
     // Description
     match description {
-        None => issues.push(Issue::new(Severity::High, "description", "Missing meta description")
-            .with_recommendation("Add a compelling meta description (150-160 characters)")),
-        Some(d) if d.length < 70 => issues.push(Issue::new(Severity::Medium, "description",
-            format!("Meta description too short ({} characters)", d.length))
-            .with_recommendation("Aim for 150-160 characters")),
+        None => issues.push(
+            Issue::new(Severity::High, "description", "Missing meta description")
+                .with_recommendation("Add a compelling meta description (150-160 characters)"),
+        ),
+        Some(d) if d.length < 70 => issues.push(
+            Issue::new(
+                Severity::Medium,
+                "description",
+                format!("Meta description too short ({} characters)", d.length),
+            )
+            .with_recommendation("Aim for 150-160 characters"),
+        ),
         _ => {}
     }
 
     // Canonical
     if canonical.is_none() {
-        issues.push(Issue::new(Severity::Medium, "canonical", "Missing canonical URL")
-            .with_recommendation("Add a canonical link to prevent duplicate content issues"));
+        issues.push(
+            Issue::new(Severity::Medium, "canonical", "Missing canonical URL")
+                .with_recommendation("Add a canonical link to prevent duplicate content issues"),
+        );
     }
 
     // Robots
     if !robots.index_allowed {
-        issues.push(Issue::new(Severity::High, "robots", "Page is set to noindex")
-            .with_recommendation("Remove noindex if this page should appear in search results"));
+        issues.push(
+            Issue::new(Severity::High, "robots", "Page is set to noindex")
+                .with_recommendation("Remove noindex if this page should appear in search results"),
+        );
     }
 
     // Open Graph
     if !open_graph.is_complete {
         let mut missing = Vec::new();
-        if open_graph.title.is_none() { missing.push("og:title"); }
-        if open_graph.description.is_none() { missing.push("og:description"); }
-        if open_graph.image.is_none() { missing.push("og:image"); }
+        if open_graph.title.is_none() {
+            missing.push("og:title");
+        }
+        if open_graph.description.is_none() {
+            missing.push("og:description");
+        }
+        if open_graph.image.is_none() {
+            missing.push("og:image");
+        }
         if !missing.is_empty() {
-            issues.push(Issue::new(Severity::Low, "social",
-                format!("Incomplete Open Graph tags (missing: {})", missing.join(", ")))
-                .with_recommendation("Add all required OG tags for better social sharing"));
+            issues.push(
+                Issue::new(
+                    Severity::Low,
+                    "social",
+                    format!(
+                        "Incomplete Open Graph tags (missing: {})",
+                        missing.join(", ")
+                    ),
+                )
+                .with_recommendation("Add all required OG tags for better social sharing"),
+            );
         }
     }
 
     // Headings
     for issue in &headings.hierarchy_issues {
-        let severity = if issue.contains("Missing H1") { Severity::High } else { Severity::Medium };
-        issues.push(Issue::new(severity, "headings", issue.clone())
-            .with_recommendation("Ensure proper heading hierarchy (one H1, followed by H2s, etc.)"));
+        let severity = if issue.contains("Missing H1") {
+            Severity::High
+        } else {
+            Severity::Medium
+        };
+        issues.push(
+            Issue::new(severity, "headings", issue.clone()).with_recommendation(
+                "Ensure proper heading hierarchy (one H1, followed by H2s, etc.)",
+            ),
+        );
     }
 
     // Technical
     if !technical.has_viewport {
-        issues.push(Issue::new(Severity::High, "mobile", "Missing viewport meta tag")
-            .with_recommendation("Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"));
+        issues.push(
+            Issue::new(Severity::High, "mobile", "Missing viewport meta tag").with_recommendation(
+                "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+            ),
+        );
     }
 
     if technical.html_lang.is_none() {
-        issues.push(Issue::new(Severity::Medium, "technical", "Missing lang attribute on <html> tag")
-            .with_recommendation("Add lang attribute (e.g., <html lang=\"en\">)"));
+        issues.push(
+            Issue::new(
+                Severity::Medium,
+                "technical",
+                "Missing lang attribute on <html> tag",
+            )
+            .with_recommendation("Add lang attribute (e.g., <html lang=\"en\">)"),
+        );
     }
 
     if technical.images_without_alt > 0 {
-        issues.push(Issue::new(Severity::Medium, "accessibility",
-            format!("{} images missing alt text", technical.images_without_alt))
-            .with_recommendation("Add descriptive alt text to all images"));
+        issues.push(
+            Issue::new(
+                Severity::Medium,
+                "accessibility",
+                format!("{} images missing alt text", technical.images_without_alt),
+            )
+            .with_recommendation("Add descriptive alt text to all images"),
+        );
     }
 
     // Structured data
     if !structured_data.has_json_ld && !structured_data.has_microdata {
-        issues.push(Issue::new(Severity::Low, "structured-data", "No structured data found")
-            .with_recommendation("Add JSON-LD structured data for rich snippets"));
+        issues.push(
+            Issue::new(Severity::Low, "structured-data", "No structured data found")
+                .with_recommendation("Add JSON-LD structured data for rich snippets"),
+        );
     }
 
     issues.sort_by(|a, b| b.severity.cmp(&a.severity));
     issues
 }
 
+#[allow(clippy::too_many_arguments)]
 fn calculate_score(
     title: &Option<TitleInfo>,
     description: &Option<DescriptionInfo>,
@@ -638,29 +727,50 @@ fn calculate_score(
     }
 
     // Canonical (max -10)
-    if canonical.is_none() { score -= 10; }
+    if canonical.is_none() {
+        score -= 10;
+    }
 
     // Noindex (max -25)
-    if !robots.index_allowed { score -= 25; }
+    if !robots.index_allowed {
+        score -= 25;
+    }
 
     // OG (max -5)
-    if !open_graph.is_complete { score -= 5; }
+    if !open_graph.is_complete {
+        score -= 5;
+    }
 
     // Headings (max -15)
-    if headings.h1_count == 0 { score -= 10; }
-    else if headings.h1_count > 1 { score -= 5; }
-    if !headings.is_valid_hierarchy { score -= 5; }
+    if headings.h1_count == 0 {
+        score -= 10;
+    } else if headings.h1_count > 1 {
+        score -= 5;
+    }
+    if !headings.is_valid_hierarchy {
+        score -= 5;
+    }
 
     // Technical (max -15)
-    if !technical.has_viewport { score -= 10; }
-    if technical.html_lang.is_none() { score -= 5; }
+    if !technical.has_viewport {
+        score -= 10;
+    }
+    if technical.html_lang.is_none() {
+        score -= 5;
+    }
 
     // Structured data (max -5)
-    if !structured_data.has_json_ld && !structured_data.has_microdata { score -= 5; }
+    if !structured_data.has_json_ld && !structured_data.has_microdata {
+        score -= 5;
+    }
 
     // Bonus
-    if structured_data.has_json_ld && !structured_data.json_ld_types.is_empty() { score += 5; }
-    if technical.is_mobile_friendly { score += 3; }
+    if structured_data.has_json_ld && !structured_data.json_ld_types.is_empty() {
+        score += 5;
+    }
+    if technical.is_mobile_friendly {
+        score += 3;
+    }
 
     score.clamp(0, 100) as u8
 }

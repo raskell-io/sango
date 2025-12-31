@@ -101,8 +101,8 @@ pub async fn check_http(target: &str, timeout: Duration) -> Result<HttpResult> {
         }
     }
 
-    let (response, status_code, headers) = final_response
-        .ok_or_else(|| anyhow::anyhow!("No final response after redirects"))?;
+    let (response, status_code, headers) =
+        final_response.ok_or_else(|| anyhow::anyhow!("No final response after redirects"))?;
 
     // Detect HTTP version
     let http_version = format!("{:?}", response.version());
@@ -115,10 +115,7 @@ pub async fn check_http(target: &str, timeout: Duration) -> Result<HttpResult> {
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
 
-    let http3_advertised = alt_svc
-        .as_ref()
-        .map(|s| s.contains("h3"))
-        .unwrap_or(false);
+    let http3_advertised = alt_svc.as_ref().map(|s| s.contains("h3")).unwrap_or(false);
 
     // Generate issues
     let mut issues = Vec::new();
@@ -229,10 +226,7 @@ mod tests {
     #[test]
     fn test_normalize_url() {
         assert_eq!(normalize_url("example.com"), "https://example.com");
-        assert_eq!(
-            normalize_url("https://example.com"),
-            "https://example.com"
-        );
+        assert_eq!(normalize_url("https://example.com"), "https://example.com");
         assert_eq!(normalize_url("http://example.com"), "http://example.com");
     }
 

@@ -241,7 +241,10 @@ pub async fn check_content(target: &str, timeout: Duration) -> Result<ContentRes
     // Fetch with Accept-Encoding to test compression
     let response = client
         .get(&base_url)
-        .header("User-Agent", "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)")
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)",
+        )
         .header("Accept-Encoding", "gzip, deflate, br")
         .send()
         .await
@@ -303,13 +306,13 @@ fn analyze_content_type(headers: &reqwest::header::HeaderMap, body: &[u8]) -> Co
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
 
-    let mime_type = header_value.as_ref().map(|ct| {
-        ct.split(';').next().unwrap_or(ct).trim().to_lowercase()
-    });
+    let mime_type = header_value
+        .as_ref()
+        .map(|ct| ct.split(';').next().unwrap_or(ct).trim().to_lowercase());
 
-    let category = mime_type.as_ref().map(|mt| {
-        mt.split('/').next().unwrap_or("unknown").to_string()
-    });
+    let category = mime_type
+        .as_ref()
+        .map(|mt| mt.split('/').next().unwrap_or("unknown").to_string());
 
     let sniffed_type = sniff_content_type(body);
 
@@ -464,11 +467,11 @@ fn analyze_size(headers: &reqwest::header::HeaderMap, body_size: u64) -> SizeInf
     let body_size_formatted = format_size(body_size);
 
     let size_category = match body_size {
-        0..=1024 => "tiny",           // < 1KB
-        1025..=10240 => "small",      // 1-10KB
-        10241..=102400 => "medium",   // 10-100KB
-        102401..=1048576 => "large",  // 100KB-1MB
-        _ => "huge",                   // > 1MB
+        0..=1024 => "tiny",          // < 1KB
+        1025..=10240 => "small",     // 1-10KB
+        10241..=102400 => "medium",  // 10-100KB
+        102401..=1048576 => "large", // 100KB-1MB
+        _ => "huge",                 // > 1MB
     }
     .to_string();
 
@@ -509,9 +512,12 @@ fn analyze_compression(
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_lowercase());
 
-    let is_compressed = encoding.as_ref().map(|e| {
-        e.contains("gzip") || e.contains("br") || e.contains("deflate") || e.contains("zstd")
-    }).unwrap_or(false);
+    let is_compressed = encoding
+        .as_ref()
+        .map(|e| {
+            e.contains("gzip") || e.contains("br") || e.contains("deflate") || e.contains("zstd")
+        })
+        .unwrap_or(false);
 
     let algorithm = if is_compressed {
         encoding.as_ref().map(|e| {
@@ -900,7 +906,9 @@ fn extract_meta_charset(document: &Html) -> Option<String> {
             if let Some(content) = element.value().attr("content") {
                 if let Some(pos) = content.to_lowercase().find("charset=") {
                     let charset = &content[pos + 8..];
-                    let end = charset.find(|c: char| c == ';' || c == ' ').unwrap_or(charset.len());
+                    let end = charset
+                        .find(|c: char| c == ';' || c == ' ')
+                        .unwrap_or(charset.len());
                     return Some(charset[..end].to_string());
                 }
             }
@@ -973,7 +981,9 @@ fn generate_issues(
             severity: Severity::Low,
             category: "content-type".to_string(),
             message: "X-Content-Type-Options: nosniff not set".to_string(),
-            recommendation: Some("Add 'X-Content-Type-Options: nosniff' to prevent MIME sniffing".to_string()),
+            recommendation: Some(
+                "Add 'X-Content-Type-Options: nosniff' to prevent MIME sniffing".to_string(),
+            ),
         });
     }
 
@@ -994,7 +1004,9 @@ fn generate_issues(
             severity: Severity::Medium,
             category: "compression".to_string(),
             message: "Response should be compressed but isn't".to_string(),
-            recommendation: Some("Enable gzip or Brotli compression for text-based content".to_string()),
+            recommendation: Some(
+                "Enable gzip or Brotli compression for text-based content".to_string(),
+            ),
         });
     }
 
@@ -1006,7 +1018,9 @@ fn generate_issues(
                     severity: Severity::Medium,
                     category: "cache".to_string(),
                     message: "Poor caching strategy".to_string(),
-                    recommendation: Some("Add Cache-Control headers with appropriate max-age".to_string()),
+                    recommendation: Some(
+                        "Add Cache-Control headers with appropriate max-age".to_string(),
+                    ),
                 });
             }
         }
@@ -1015,7 +1029,9 @@ fn generate_issues(
                 severity: Severity::Low,
                 category: "cache".to_string(),
                 message: "Basic caching could be improved".to_string(),
-                recommendation: Some("Consider adding ETag, immutable, or stale-while-revalidate".to_string()),
+                recommendation: Some(
+                    "Consider adding ETag, immutable, or stale-while-revalidate".to_string(),
+                ),
             });
         }
         _ => {}
@@ -1071,7 +1087,10 @@ mod tests {
     #[test]
     fn test_sniff_json() {
         let json = b"{\"key\": \"value\"}";
-        assert_eq!(sniff_content_type(json), Some("application/json".to_string()));
+        assert_eq!(
+            sniff_content_type(json),
+            Some("application/json".to_string())
+        );
     }
 
     #[test]
@@ -1111,7 +1130,12 @@ mod tests {
             public: true,
             ..Default::default()
         };
-        let rating = rate_cache_strategy(&directives, &Some("abc".to_string()), &Some("Mon, 01 Jan 2024".to_string()), true);
+        let rating = rate_cache_strategy(
+            &directives,
+            &Some("abc".to_string()),
+            &Some("Mon, 01 Jan 2024".to_string()),
+            true,
+        );
         assert_eq!(rating, CacheRating::Excellent);
     }
 

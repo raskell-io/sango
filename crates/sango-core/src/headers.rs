@@ -67,7 +67,9 @@ pub struct RawHeaders {
 
 impl RawHeaders {
     pub fn new() -> Self {
-        Self { headers: HashMap::new() }
+        Self {
+            headers: HashMap::new(),
+        }
     }
 
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<String>) {
@@ -117,8 +119,8 @@ pub fn analyze_headers(raw: &RawHeaders) -> HeadersAnalysis {
     }
 
     // Permissions-Policy
-    result.has_permissions_policy = raw.get("permissions-policy").is_some()
-        || raw.get("feature-policy").is_some();
+    result.has_permissions_policy =
+        raw.get("permissions-policy").is_some() || raw.get("feature-policy").is_some();
 
     // Server
     result.server = raw.get("server").cloned();
@@ -144,7 +146,9 @@ fn parse_hsts(value: &str, result: &mut HeadersAnalysis) {
     // Extract max-age
     if let Some(start) = lower.find("max-age=") {
         let after = &lower[start + 8..];
-        let end = after.find(|c: char| !c.is_ascii_digit()).unwrap_or(after.len());
+        let end = after
+            .find(|c: char| !c.is_ascii_digit())
+            .unwrap_or(after.len());
         if let Ok(age) = after[..end].parse::<u64>() {
             result.hsts_max_age = Some(age);
         }
@@ -158,12 +162,24 @@ fn summarize_csp(csp: &str) -> String {
     // Extract key directives
     let mut summary = Vec::new();
 
-    if csp.contains("default-src") { summary.push("default-src"); }
-    if csp.contains("script-src") { summary.push("script-src"); }
-    if csp.contains("style-src") { summary.push("style-src"); }
-    if csp.contains("img-src") { summary.push("img-src"); }
-    if csp.contains("frame-ancestors") { summary.push("frame-ancestors"); }
-    if csp.contains("upgrade-insecure-requests") { summary.push("upgrade-insecure"); }
+    if csp.contains("default-src") {
+        summary.push("default-src");
+    }
+    if csp.contains("script-src") {
+        summary.push("script-src");
+    }
+    if csp.contains("style-src") {
+        summary.push("style-src");
+    }
+    if csp.contains("img-src") {
+        summary.push("img-src");
+    }
+    if csp.contains("frame-ancestors") {
+        summary.push("frame-ancestors");
+    }
+    if csp.contains("upgrade-insecure-requests") {
+        summary.push("upgrade-insecure");
+    }
 
     if summary.is_empty() {
         if csp.len() > 50 {
@@ -181,38 +197,62 @@ fn generate_issues(result: &HeadersAnalysis) -> Vec<Issue> {
 
     // HSTS
     if !result.has_hsts {
-        issues.push(Issue::new(Severity::High, "security", "HSTS header missing")
-            .with_recommendation("Add Strict-Transport-Security header to prevent downgrade attacks"));
+        issues.push(
+            Issue::new(Severity::High, "security", "HSTS header missing").with_recommendation(
+                "Add Strict-Transport-Security header to prevent downgrade attacks",
+            ),
+        );
     } else if let Some(age) = result.hsts_max_age {
         if age < 31536000 {
-            issues.push(Issue::new(Severity::Medium, "security",
-                format!("HSTS max-age too short ({} seconds)", age))
-                .with_recommendation("Set max-age to at least 31536000 (1 year)"));
+            issues.push(
+                Issue::new(
+                    Severity::Medium,
+                    "security",
+                    format!("HSTS max-age too short ({} seconds)", age),
+                )
+                .with_recommendation("Set max-age to at least 31536000 (1 year)"),
+            );
         }
     }
 
     // CSP
     if !result.has_csp {
-        issues.push(Issue::new(Severity::Medium, "security", "CSP header missing")
-            .with_recommendation("Add Content-Security-Policy to mitigate XSS attacks"));
+        issues.push(
+            Issue::new(Severity::Medium, "security", "CSP header missing")
+                .with_recommendation("Add Content-Security-Policy to mitigate XSS attacks"),
+        );
     }
 
     // X-Content-Type-Options
     if !result.has_xcto {
-        issues.push(Issue::new(Severity::Low, "security", "X-Content-Type-Options header missing")
-            .with_recommendation("Add X-Content-Type-Options: nosniff"));
+        issues.push(
+            Issue::new(
+                Severity::Low,
+                "security",
+                "X-Content-Type-Options header missing",
+            )
+            .with_recommendation("Add X-Content-Type-Options: nosniff"),
+        );
     }
 
     // X-Powered-By (information disclosure)
     if result.x_powered_by.is_some() {
-        issues.push(Issue::new(Severity::Low, "security", "X-Powered-By header exposes technology stack")
-            .with_recommendation("Remove X-Powered-By header to reduce information disclosure"));
+        issues.push(
+            Issue::new(
+                Severity::Low,
+                "security",
+                "X-Powered-By header exposes technology stack",
+            )
+            .with_recommendation("Remove X-Powered-By header to reduce information disclosure"),
+        );
     }
 
     // Referrer-Policy
     if !result.has_referrer_policy {
-        issues.push(Issue::new(Severity::Low, "security", "Referrer-Policy header missing")
-            .with_recommendation("Add Referrer-Policy to control referrer information"));
+        issues.push(
+            Issue::new(Severity::Low, "security", "Referrer-Policy header missing")
+                .with_recommendation("Add Referrer-Policy to control referrer information"),
+        );
     }
 
     issues.sort_by(|a, b| b.severity.cmp(&a.severity));
@@ -226,7 +266,10 @@ mod tests {
     #[test]
     fn test_hsts_parsing() {
         let mut raw = RawHeaders::new();
-        raw.insert("strict-transport-security", "max-age=31536000; includeSubDomains; preload");
+        raw.insert(
+            "strict-transport-security",
+            "max-age=31536000; includeSubDomains; preload",
+        );
 
         let result = analyze_headers(&raw);
         assert!(result.has_hsts);

@@ -11,11 +11,7 @@ use crate::probe::{Health, ProbeResult};
 pub fn print_pretty(result: &ProbeResult) {
     // Header
     println!();
-    println!(
-        "{} {}",
-        "sango".bold().cyan(),
-        "edge diagnostics".dimmed()
-    );
+    println!("{} {}", "sango".bold().cyan(), "edge diagnostics".dimmed());
     println!("{}", "─".repeat(60).dimmed());
     println!();
 
@@ -111,7 +107,11 @@ fn print_tls_section(tls: &crate::checks::tls::TlsResult) {
     println!();
 
     // Connection info
-    let tls_status = if tls.valid { "OK".green() } else { "FAIL".red() };
+    let tls_status = if tls.valid {
+        "OK".green()
+    } else {
+        "FAIL".red()
+    };
     println!("    {} {}", "Connection:".dimmed(), tls_status);
     println!("    {} {}", "Version:".dimmed(), tls.tls_version);
     println!("    {} {}", "Cipher:".dimmed(), tls.cipher_suite);
@@ -145,7 +145,12 @@ fn print_tls_section(tls: &crate::checks::tls::TlsResult) {
     println!();
 
     // Issues
-    print_issues(&tls.issues.iter().map(|i| (i.severity, &i.message)).collect::<Vec<_>>());
+    print_issues(
+        &tls.issues
+            .iter()
+            .map(|i| (i.severity, &i.message))
+            .collect::<Vec<_>>(),
+    );
 }
 
 fn print_http_section(http: &crate::checks::http::HttpResult) {
@@ -172,15 +177,30 @@ fn print_http_section(http: &crate::checks::http::HttpResult) {
 
     // Redirects
     if !http.redirect_chain.is_empty() {
-        println!("    {} {} hops", "Redirects:".dimmed(), http.redirect_chain.len());
+        println!(
+            "    {} {} hops",
+            "Redirects:".dimmed(),
+            http.redirect_chain.len()
+        );
         for hop in &http.redirect_chain {
-            println!("      {} {} -> {}", "·".dimmed(), hop.status, truncate(&hop.url, 40));
+            println!(
+                "      {} {} -> {}",
+                "·".dimmed(),
+                hop.status,
+                truncate(&hop.url, 40)
+            );
         }
     }
     println!();
 
     // Issues
-    print_issues(&http.issues.iter().map(|i| (i.severity, &i.message)).collect::<Vec<_>>());
+    print_issues(
+        &http
+            .issues
+            .iter()
+            .map(|i| (i.severity, &i.message))
+            .collect::<Vec<_>>(),
+    );
 }
 
 fn print_headers_section(headers: &crate::checks::headers::HeadersResult) {
@@ -435,7 +455,9 @@ fn print_techstack_section(techstack: &crate::checks::techstack::TechStackResult
     // Server
     match &techstack.server {
         Some(s) => {
-            let version_str = s.version.as_ref()
+            let version_str = s
+                .version
+                .as_ref()
                 .map(|v| format!(" {}", v))
                 .unwrap_or_default();
             println!(
@@ -453,7 +475,9 @@ fn print_techstack_section(techstack: &crate::checks::techstack::TechStackResult
     // CDN
     match &techstack.cdn {
         Some(cdn) => {
-            let edge_str = cdn.edge_location.as_ref()
+            let edge_str = cdn
+                .edge_location
+                .as_ref()
                 .map(|e| format!(" ({})", e))
                 .unwrap_or_default();
             println!(
@@ -475,9 +499,15 @@ fn print_techstack_section(techstack: &crate::checks::techstack::TechStackResult
 
     // Frameworks
     if !techstack.frameworks.is_empty() {
-        println!("    {} {} detected", "Frameworks:".dimmed(), techstack.frameworks.len());
+        println!(
+            "    {} {} detected",
+            "Frameworks:".dimmed(),
+            techstack.frameworks.len()
+        );
         for fw in &techstack.frameworks {
-            let version_str = fw.version.as_ref()
+            let version_str = fw
+                .version
+                .as_ref()
                 .map(|v| format!(" {}", v))
                 .unwrap_or_default();
             let category = match fw.category {
@@ -499,7 +529,9 @@ fn print_techstack_section(techstack: &crate::checks::techstack::TechStackResult
 
     // CMS
     if let Some(ref cms) = techstack.cms {
-        let version_str = cms.version.as_ref()
+        let version_str = cms
+            .version
+            .as_ref()
             .map(|v| format!(" {}", v))
             .unwrap_or_default();
         println!(
@@ -515,9 +547,13 @@ fn print_techstack_section(techstack: &crate::checks::techstack::TechStackResult
         println!(
             "    {} {}",
             "Libraries:".dimmed(),
-            techstack.js_libraries.iter()
+            techstack
+                .js_libraries
+                .iter()
                 .map(|lib| {
-                    let v = lib.version.as_ref()
+                    let v = lib
+                        .version
+                        .as_ref()
                         .map(|v| format!(" {}", v))
                         .unwrap_or_default();
                     format!("{}{}", lib.name, v)
@@ -532,7 +568,9 @@ fn print_techstack_section(techstack: &crate::checks::techstack::TechStackResult
         println!(
             "    {} {}",
             "Analytics:".dimmed(),
-            techstack.analytics.iter()
+            techstack
+                .analytics
+                .iter()
                 .map(|a| a.name.clone())
                 .collect::<Vec<_>>()
                 .join(", ")
@@ -560,7 +598,11 @@ fn print_seo_section(seo: &crate::checks::seo::SeoResult) {
         format!("{}", seo.score).red()
     };
 
-    println!("{} {}", "  SEO".bold().underline(), format!("(score: {})", score_color).dimmed());
+    println!(
+        "{} {}",
+        "  SEO".bold().underline(),
+        format!("(score: {})", score_color).dimmed()
+    );
     println!();
 
     // Title
@@ -612,7 +654,11 @@ fn print_seo_section(seo: &crate::checks::seo::SeoResult) {
     // Canonical
     match &seo.canonical {
         Some(c) => {
-            let status = if c.is_self_referencing { "self".green() } else { "external".yellow() };
+            let status = if c.is_self_referencing {
+                "self".green()
+            } else {
+                "external".yellow()
+            };
             println!(
                 "    {} {} [{}]",
                 "Canonical:".dimmed(),
@@ -669,9 +715,18 @@ fn print_seo_section(seo: &crate::checks::seo::SeoResult) {
         } else {
             seo.structured_data.json_ld_types.join(", ")
         };
-        println!("    {} {} ({})", "Structured data:".dimmed(), "JSON-LD".green(), types);
+        println!(
+            "    {} {} ({})",
+            "Structured data:".dimmed(),
+            "JSON-LD".green(),
+            types
+        );
     } else if seo.structured_data.has_microdata {
-        println!("    {} {}", "Structured data:".dimmed(), "Microdata".green());
+        println!(
+            "    {} {}",
+            "Structured data:".dimmed(),
+            "Microdata".green()
+        );
     } else {
         println!("    {} {}", "Structured data:".dimmed(), "none".yellow());
     }
@@ -697,9 +752,9 @@ fn print_seo_section(seo: &crate::checks::seo::SeoResult) {
         } else {
             format!(
                 "{} images, {} missing alt",
-                seo.technical.image_count,
-                seo.technical.images_without_alt
-            ).yellow()
+                seo.technical.image_count, seo.technical.images_without_alt
+            )
+            .yellow()
         };
         println!("    {} {}", "Images:".dimmed(), alt_status);
     }
@@ -748,7 +803,9 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
             format!("{}", aeo.structured_data.json_ld_blocks.len()).green()
         );
         if !aeo.structured_data.schema_types.is_empty() {
-            let types_str = aeo.structured_data.schema_types
+            let types_str = aeo
+                .structured_data
+                .schema_types
                 .iter()
                 .take(5)
                 .cloned()
@@ -764,12 +821,24 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
     }
 
     // AI Endpoints
-    let has_llms = aeo.ai_endpoints.llms_txt.as_ref().map(|l| l.exists).unwrap_or(false);
-    let has_plugin = aeo.ai_endpoints.ai_plugin.as_ref().map(|p| p.exists && p.is_valid).unwrap_or(false);
+    let has_llms = aeo
+        .ai_endpoints
+        .llms_txt
+        .as_ref()
+        .map(|l| l.exists)
+        .unwrap_or(false);
+    let has_plugin = aeo
+        .ai_endpoints
+        .ai_plugin
+        .as_ref()
+        .map(|p| p.exists && p.is_valid)
+        .unwrap_or(false);
 
     if has_llms {
         let llms = aeo.ai_endpoints.llms_txt.as_ref().unwrap();
-        let title_str = llms.title.as_ref()
+        let title_str = llms
+            .title
+            .as_ref()
             .map(|t| format!(" - {}", truncate_str(t, 30)))
             .unwrap_or_default();
         println!(
@@ -781,8 +850,7 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
         if llms.section_count > 0 || llms.link_count > 0 {
             println!(
                 "      {} sections, {} links",
-                llms.section_count,
-                llms.link_count
+                llms.section_count, llms.link_count
             );
         }
     } else {
@@ -791,7 +859,9 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
 
     if has_plugin {
         let plugin = aeo.ai_endpoints.ai_plugin.as_ref().unwrap();
-        let name_str = plugin.name.as_ref()
+        let name_str = plugin
+            .name
+            .as_ref()
             .map(|n| format!(" ({})", n))
             .unwrap_or_default();
         println!(
@@ -805,22 +875,14 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
     // robots.txt AI rules
     if let Some(ref rules) = aeo.ai_endpoints.robots_ai_rules {
         if rules.blocks_ai_bots {
-            println!(
-                "    {} {}",
-                "AI Bots:".dimmed(),
-                "blocked".red()
-            );
+            println!("    {} {}", "AI Bots:".dimmed(), "blocked".red());
             println!(
                 "      {} {}",
                 "Agents:".dimmed(),
                 rules.ai_user_agents.join(", ").dimmed()
             );
         } else if rules.allows_ai_bots {
-            println!(
-                "    {} {}",
-                "AI Bots:".dimmed(),
-                "allowed".green()
-            );
+            println!("    {} {}", "AI Bots:".dimmed(), "allowed".green());
         }
     }
 
@@ -841,8 +903,7 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
     if aeo.content_structure.word_count > 0 {
         println!(
             "      {} words, ~{} min read",
-            aeo.content_structure.word_count,
-            aeo.content_structure.reading_time_minutes
+            aeo.content_structure.word_count, aeo.content_structure.reading_time_minutes
         );
     }
 
@@ -851,7 +912,9 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
         print!("    {} ", "APIs:".dimmed());
         let mut apis = Vec::new();
         if let Some(ref openapi) = aeo.api_discovery.openapi {
-            let version_str = openapi.version.as_ref()
+            let version_str = openapi
+                .version
+                .as_ref()
                 .map(|v| format!(" {}", v))
                 .unwrap_or_default();
             apis.push(format!("OpenAPI{}", version_str).green().to_string());
@@ -888,14 +951,14 @@ fn print_content_section(content: &crate::checks::content::ContentResult) {
             let match_status = if content.content_type.types_match {
                 "".to_string()
             } else {
-                format!(" (sniffed: {})", content.content_type.sniffed_type.as_deref().unwrap_or("?")).yellow().to_string()
+                format!(
+                    " (sniffed: {})",
+                    content.content_type.sniffed_type.as_deref().unwrap_or("?")
+                )
+                .yellow()
+                .to_string()
             };
-            println!(
-                "    {} {}{}",
-                "Type:".dimmed(),
-                mime,
-                match_status
-            );
+            println!("    {} {}{}", "Type:".dimmed(), mime, match_status);
         }
         None => {
             println!("    {} {}", "Type:".dimmed(), "not specified".red());
@@ -910,7 +973,12 @@ fn print_content_section(content: &crate::checks::content::ContentResult) {
         "huge" => content.size.body_size_formatted.red(),
         _ => content.size.body_size_formatted.normal(),
     };
-    println!("    {} {} ({})", "Size:".dimmed(), size_color, content.size.size_category);
+    println!(
+        "    {} {} ({})",
+        "Size:".dimmed(),
+        size_color,
+        content.size.size_category
+    );
 
     // Compression
     if content.compression.is_compressed {
@@ -918,7 +986,11 @@ fn print_content_section(content: &crate::checks::content::ContentResult) {
             "    {} {} ({})",
             "Compression:".dimmed(),
             "enabled".green(),
-            content.compression.algorithm.as_deref().unwrap_or("unknown")
+            content
+                .compression
+                .algorithm
+                .as_deref()
+                .unwrap_or("unknown")
         );
     } else if content.compression.should_compress {
         println!(
@@ -993,13 +1065,22 @@ fn print_content_section(content: &crate::checks::content::ContentResult) {
             hints.push(format!("{} preload", content.resource_hints.preload.len()));
         }
         if !content.resource_hints.prefetch.is_empty() {
-            hints.push(format!("{} prefetch", content.resource_hints.prefetch.len()));
+            hints.push(format!(
+                "{} prefetch",
+                content.resource_hints.prefetch.len()
+            ));
         }
         if !content.resource_hints.preconnect.is_empty() {
-            hints.push(format!("{} preconnect", content.resource_hints.preconnect.len()));
+            hints.push(format!(
+                "{} preconnect",
+                content.resource_hints.preconnect.len()
+            ));
         }
         if !content.resource_hints.dns_prefetch.is_empty() {
-            hints.push(format!("{} dns-prefetch", content.resource_hints.dns_prefetch.len()));
+            hints.push(format!(
+                "{} dns-prefetch",
+                content.resource_hints.dns_prefetch.len()
+            ));
         }
         println!("    {} {}", "Hints:".dimmed(), hints.join(", ").green());
     }
@@ -1008,7 +1089,8 @@ fn print_content_section(content: &crate::checks::content::ContentResult) {
 
     // Issues
     print_issues(
-        &content.issues
+        &content
+            .issues
             .iter()
             .map(|i| (i.severity, &i.message))
             .collect::<Vec<_>>(),
@@ -1330,7 +1412,9 @@ pub fn print_compact(result: &ProbeResult) -> String {
             parts.push(format!("cdn={}", cdn.name));
         }
         if !techstack.frameworks.is_empty() {
-            let fw_names: Vec<_> = techstack.frameworks.iter()
+            let fw_names: Vec<_> = techstack
+                .frameworks
+                .iter()
                 .take(2)
                 .map(|f| f.name.as_str())
                 .collect();
@@ -1348,7 +1432,10 @@ pub fn print_compact(result: &ProbeResult) -> String {
 
     if let Some(ref content) = result.content {
         if content.compression.is_compressed {
-            parts.push(format!("comp={}", content.compression.algorithm.as_deref().unwrap_or("yes")));
+            parts.push(format!(
+                "comp={}",
+                content.compression.algorithm.as_deref().unwrap_or("yes")
+            ));
         }
         let cache_abbr = match content.cache.rating {
             crate::checks::content::CacheRating::Excellent => "A",
@@ -1370,8 +1457,17 @@ pub fn print_compact(result: &ProbeResult) -> String {
     if let Some(ref assets) = result.assets {
         parts.push(format!("assets={}", assets.total_assets));
         parts.push(format!("size={}", assets.total_size_formatted));
-        if assets.slowest.first().map(|a| a.load_time_ms > 500).unwrap_or(false) {
-            let slow_count = assets.assets.iter().filter(|a| a.load_time_ms > 500).count();
+        if assets
+            .slowest
+            .first()
+            .map(|a| a.load_time_ms > 500)
+            .unwrap_or(false)
+        {
+            let slow_count = assets
+                .assets
+                .iter()
+                .filter(|a| a.load_time_ms > 500)
+                .count();
             parts.push(format!("slow={}", slow_count));
         }
     }

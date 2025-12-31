@@ -50,24 +50,46 @@ pub fn analyze_aeo(html: &str, config: AeoConfig) -> AeoAnalysis {
 
     // Calculate score
     let mut score: u8 = 0;
-    if json_ld_count > 0 { score += 25; }
-    if !schema_types.is_empty() { score += 15; }
-    if config.has_llms_txt { score += 10; }
-    if text_ratio > 0.15 { score += 15; }
-    else if text_ratio > 0.05 { score += 10; }
-    if semantic_score >= 70 { score += 20; }
-    else if semantic_score >= 50 { score += 10; }
-    if word_count > 300 { score += 15; }
-    else if word_count > 100 { score += 10; }
+    if json_ld_count > 0 {
+        score += 25;
+    }
+    if !schema_types.is_empty() {
+        score += 15;
+    }
+    if config.has_llms_txt {
+        score += 10;
+    }
+    if text_ratio > 0.15 {
+        score += 15;
+    } else if text_ratio > 0.05 {
+        score += 10;
+    }
+    if semantic_score >= 70 {
+        score += 20;
+    } else if semantic_score >= 50 {
+        score += 10;
+    }
+    if word_count > 300 {
+        score += 15;
+    } else if word_count > 100 {
+        score += 10;
+    }
 
     let readiness = match score {
         80..=100 => "Excellent",
         60..=79 => "Good",
         40..=59 => "Basic",
         _ => "Poor",
-    }.to_string();
+    }
+    .to_string();
 
-    let issues = generate_issues(json_ld_count, text_ratio, semantic_score, word_count, config.has_llms_txt);
+    let issues = generate_issues(
+        json_ld_count,
+        text_ratio,
+        semantic_score,
+        word_count,
+        config.has_llms_txt,
+    );
 
     AeoAnalysis {
         score,
@@ -85,7 +107,8 @@ pub fn analyze_aeo(html: &str, config: AeoConfig) -> AeoAnalysis {
 fn extract_json_ld_blocks(document: &Html) -> Vec<String> {
     Selector::parse("script[type='application/ld+json']")
         .map(|sel| {
-            document.select(&sel)
+            document
+                .select(&sel)
                 .map(|el| el.text().collect::<String>())
                 .collect()
         })
@@ -139,10 +162,7 @@ fn calculate_text_ratio(html: &str, document: &Html) -> f32 {
         return 0.0;
     }
 
-    let text_len: usize = document.root_element()
-        .text()
-        .map(|t| t.trim().len())
-        .sum();
+    let text_len: usize = document.root_element().text().map(|t| t.trim().len()).sum();
 
     text_len as f32 / total_len
 }
@@ -174,7 +194,8 @@ fn calculate_semantic_score(document: &Html) -> u8 {
 }
 
 fn count_words(document: &Html) -> usize {
-    document.root_element()
+    document
+        .root_element()
         .text()
         .flat_map(|t| t.split_whitespace())
         .count()
@@ -190,31 +211,54 @@ fn generate_issues(
     let mut issues = Vec::new();
 
     if json_ld_count == 0 {
-        issues.push(Issue::new(Severity::Medium, "aeo", "No JSON-LD structured data for AI understanding")
-            .with_recommendation("Add Schema.org JSON-LD for better AI comprehension"));
+        issues.push(
+            Issue::new(
+                Severity::Medium,
+                "aeo",
+                "No JSON-LD structured data for AI understanding",
+            )
+            .with_recommendation("Add Schema.org JSON-LD for better AI comprehension"),
+        );
     }
 
     if text_ratio < 0.1 {
-        issues.push(Issue::new(Severity::Low, "aeo",
-            format!("Low text-to-HTML ratio ({:.1}%)", text_ratio * 100.0))
-            .with_recommendation("Increase meaningful text content relative to markup"));
+        issues.push(
+            Issue::new(
+                Severity::Low,
+                "aeo",
+                format!("Low text-to-HTML ratio ({:.1}%)", text_ratio * 100.0),
+            )
+            .with_recommendation("Increase meaningful text content relative to markup"),
+        );
     }
 
     if semantic_score < 50 {
-        issues.push(Issue::new(Severity::Low, "aeo",
-            format!("Low semantic HTML usage ({}%)", semantic_score))
-            .with_recommendation("Use semantic elements (article, section, nav, etc.)"));
+        issues.push(
+            Issue::new(
+                Severity::Low,
+                "aeo",
+                format!("Low semantic HTML usage ({}%)", semantic_score),
+            )
+            .with_recommendation("Use semantic elements (article, section, nav, etc.)"),
+        );
     }
 
     if word_count < 100 {
-        issues.push(Issue::new(Severity::Low, "aeo",
-            format!("Low word count ({} words)", word_count))
-            .with_recommendation("Consider adding more substantive content"));
+        issues.push(
+            Issue::new(
+                Severity::Low,
+                "aeo",
+                format!("Low word count ({} words)", word_count),
+            )
+            .with_recommendation("Consider adding more substantive content"),
+        );
     }
 
     if !has_llms_txt {
-        issues.push(Issue::new(Severity::Low, "aeo", "No llms.txt file found")
-            .with_recommendation("Consider adding /llms.txt for AI agent instructions"));
+        issues.push(
+            Issue::new(Severity::Low, "aeo", "No llms.txt file found")
+                .with_recommendation("Consider adding /llms.txt for AI agent instructions"),
+        );
     }
 
     issues

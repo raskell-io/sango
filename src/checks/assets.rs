@@ -45,8 +45,8 @@ impl Default for AssetsConfig {
             timeout: Duration::from_secs(10),
             slow_threshold_ms: 500,
             very_slow_threshold_ms: 2000,
-            large_js_bytes: 100 * 1024,      // 100KB
-            large_image_bytes: 500 * 1024,   // 500KB
+            large_js_bytes: 100 * 1024,    // 100KB
+            large_image_bytes: 500 * 1024, // 500KB
             third_party_threshold: 50,
             include_fonts: true,
             include_media: true,
@@ -252,10 +252,7 @@ const KNOWN_CDNS: &[(&str, &str)] = &[
 ];
 
 /// Check assets for the page
-pub async fn check_assets(
-    target: &str,
-    config: AssetsConfig,
-) -> Result<AssetsResult> {
+pub async fn check_assets(target: &str, config: AssetsConfig) -> Result<AssetsResult> {
     let base_url = normalize_url(target);
     let base_parsed = Url::parse(&base_url).context("Invalid base URL")?;
     let base_host = base_parsed.host_str().unwrap_or("").to_lowercase();
@@ -557,15 +554,14 @@ async fn analyze_single_asset(
         .map(|s| s.to_string());
 
     let cache_max_age = cache_control.as_ref().and_then(|cc| {
-        cc.split(',')
-            .find_map(|part| {
-                let part = part.trim();
-                if part.starts_with("max-age=") {
-                    part[8..].parse::<u64>().ok()
-                } else {
-                    None
-                }
-            })
+        cc.split(',').find_map(|part| {
+            let part = part.trim();
+            if part.starts_with("max-age=") {
+                part[8..].parse::<u64>().ok()
+            } else {
+                None
+            }
+        })
     });
 
     let is_cached = cache_control.is_some()
@@ -678,10 +674,7 @@ fn calculate_provenance_breakdown(
         // Track domains
         if let Ok(parsed) = Url::parse(&asset.url) {
             if let Some(host) = parsed.host_str() {
-                domain_sets
-                    .entry(key)
-                    .or_default()
-                    .insert(host.to_string());
+                domain_sets.entry(key).or_default().insert(host.to_string());
             }
         }
     }
@@ -755,10 +748,7 @@ fn truncate_url(url: &str, max_len: usize) -> String {
     if let Ok(parsed) = Url::parse(url) {
         let path = parsed.path();
         if path.len() < max_len - 10 {
-            return format!(
-                "...{}",
-                &url[url.len().saturating_sub(max_len - 3)..]
-            );
+            return format!("...{}", &url[url.len().saturating_sub(max_len - 3)..]);
         }
     }
 
@@ -775,23 +765,35 @@ fn generate_issues(
     let mut issues = Vec::new();
 
     // Slow assets (configurable threshold)
-    let slow_count = assets.iter().filter(|a| a.load_time_ms > config.slow_threshold_ms).count();
+    let slow_count = assets
+        .iter()
+        .filter(|a| a.load_time_ms > config.slow_threshold_ms)
+        .count();
     if slow_count > 0 {
         issues.push(AssetIssue {
             severity: Severity::Medium,
             category: "performance".to_string(),
-            message: format!("{} assets took >{}ms to load", slow_count, config.slow_threshold_ms),
+            message: format!(
+                "{} assets took >{}ms to load",
+                slow_count, config.slow_threshold_ms
+            ),
             recommendation: Some("Consider lazy-loading or optimizing slow assets".to_string()),
         });
     }
 
     // Very slow assets (configurable threshold)
-    let very_slow_count = assets.iter().filter(|a| a.load_time_ms > config.very_slow_threshold_ms).count();
+    let very_slow_count = assets
+        .iter()
+        .filter(|a| a.load_time_ms > config.very_slow_threshold_ms)
+        .count();
     if very_slow_count > 0 {
         issues.push(AssetIssue {
             severity: Severity::High,
             category: "performance".to_string(),
-            message: format!("{} assets took >{}ms to load", very_slow_count, config.very_slow_threshold_ms),
+            message: format!(
+                "{} assets took >{}ms to load",
+                very_slow_count, config.very_slow_threshold_ms
+            ),
             recommendation: Some(
                 "Critical performance issue - investigate slow assets immediately".to_string(),
             ),
@@ -856,7 +858,10 @@ fn generate_issues(
         issues.push(AssetIssue {
             severity: Severity::Medium,
             category: "third-party".to_string(),
-            message: format!("{:.0}% of assets from third parties (threshold: {}%)", third_party_pct, config.third_party_threshold),
+            message: format!(
+                "{:.0}% of assets from third parties (threshold: {}%)",
+                third_party_pct, config.third_party_threshold
+            ),
             recommendation: Some(
                 "Consider self-hosting critical assets for reliability".to_string(),
             ),
@@ -913,8 +918,10 @@ mod tests {
         assert!(cdn.is_none());
 
         // Known CDN
-        let (prov, cdn) =
-            classify_provenance("https://cdnjs.cloudflare.com/ajax/libs/jquery.js", "example.com");
+        let (prov, cdn) = classify_provenance(
+            "https://cdnjs.cloudflare.com/ajax/libs/jquery.js",
+            "example.com",
+        );
         assert_eq!(prov, Provenance::Cdn);
         assert_eq!(cdn, Some("cdnjs".to_string()));
 

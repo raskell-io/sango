@@ -17,10 +17,13 @@ pub async fn get_resource_timing(url: &str) -> Option<TimingResult> {
     let entries = js_sys::Reflect::get(
         &performance,
         &wasm_bindgen::JsValue::from_str("getEntriesByType"),
-    ).ok()?;
+    )
+    .ok()?;
 
     let get_entries_fn: js_sys::Function = entries.dyn_into().ok()?;
-    let result = get_entries_fn.call1(&performance, &wasm_bindgen::JsValue::from_str("resource")).ok()?;
+    let result = get_entries_fn
+        .call1(&performance, &wasm_bindgen::JsValue::from_str("resource"))
+        .ok()?;
     let entries_array: js_sys::Array = result.dyn_into().ok()?;
 
     // Find the entry for our URL

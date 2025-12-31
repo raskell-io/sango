@@ -17,7 +17,9 @@ use probe::ProbeConfig;
 #[derive(Parser, Debug)]
 #[command(name = "sango")]
 #[command(author, version)]
-#[command(about = "Operator-grade edge diagnostics - analyze TLS, HTTP, security headers, SEO, AEO, and more")]
+#[command(
+    about = "Operator-grade edge diagnostics - analyze TLS, HTTP, security headers, SEO, AEO, and more"
+)]
 #[command(arg_required_else_help = true)]
 #[command(after_long_help = EXTENDED_HELP)]
 struct Args {
@@ -225,7 +227,6 @@ struct Args {
     // ─────────────────────────────────────────────────────────────
     // Topology Configuration
     // ─────────────────────────────────────────────────────────────
-
     /// Include sitemap URLs in topology discovery
     ///
     /// When enabled, fetches sitemap.xml and includes those URLs
@@ -243,7 +244,6 @@ struct Args {
     // ─────────────────────────────────────────────────────────────
     // Assets Configuration
     // ─────────────────────────────────────────────────────────────
-
     /// Slow asset threshold in milliseconds
     ///
     /// Assets taking longer than this are flagged as slow.
@@ -290,7 +290,6 @@ struct Args {
     // ─────────────────────────────────────────────────────────────
     // Latency Configuration
     // ─────────────────────────────────────────────────────────────
-
     /// DNS lookup warning threshold in milliseconds
     #[arg(long, default_value = "100", value_name = "MS")]
     latency_dns_warn: u64,
@@ -447,41 +446,50 @@ async fn main() -> Result<()> {
     }
 
     // Handle --only flag: if specified, skip all checks except those listed
-    let (skip_tls, skip_http, skip_headers, skip_latency, skip_discovery,
-         skip_techstack, skip_seo, skip_aeo, skip_content, skip_topology, skip_assets) =
-        if let Some(ref only_checks) = args.only {
-            let checks: std::collections::HashSet<_> = only_checks.iter()
-                .map(|s| s.to_lowercase())
-                .collect();
-            (
-                !checks.contains("tls"),
-                !checks.contains("http"),
-                !checks.contains("headers"),
-                !checks.contains("latency"),
-                !checks.contains("discovery"),
-                !checks.contains("techstack"),
-                !checks.contains("seo"),
-                !checks.contains("aeo"),
-                !checks.contains("content"),
-                !checks.contains("topology"),
-                !checks.contains("assets"),
-            )
-        } else {
-            // Use explicit skip flags
-            (
-                args.skip_tls,
-                args.skip_http,
-                args.skip_headers,
-                args.skip_latency,
-                args.skip_discovery,
-                args.skip_techstack,
-                args.skip_seo,
-                args.skip_aeo,
-                args.skip_content,
-                args.skip_topology,
-                args.skip_assets,
-            )
-        };
+    let (
+        skip_tls,
+        skip_http,
+        skip_headers,
+        skip_latency,
+        skip_discovery,
+        skip_techstack,
+        skip_seo,
+        skip_aeo,
+        skip_content,
+        skip_topology,
+        skip_assets,
+    ) = if let Some(ref only_checks) = args.only {
+        let checks: std::collections::HashSet<_> =
+            only_checks.iter().map(|s| s.to_lowercase()).collect();
+        (
+            !checks.contains("tls"),
+            !checks.contains("http"),
+            !checks.contains("headers"),
+            !checks.contains("latency"),
+            !checks.contains("discovery"),
+            !checks.contains("techstack"),
+            !checks.contains("seo"),
+            !checks.contains("aeo"),
+            !checks.contains("content"),
+            !checks.contains("topology"),
+            !checks.contains("assets"),
+        )
+    } else {
+        // Use explicit skip flags
+        (
+            args.skip_tls,
+            args.skip_http,
+            args.skip_headers,
+            args.skip_latency,
+            args.skip_discovery,
+            args.skip_techstack,
+            args.skip_seo,
+            args.skip_aeo,
+            args.skip_content,
+            args.skip_topology,
+            args.skip_assets,
+        )
+    };
 
     // Build probe config
     let config = ProbeConfig {

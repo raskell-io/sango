@@ -149,10 +149,7 @@ pub struct TopologyIssue {
 }
 
 /// Check site topology by spidering links
-pub async fn check_topology(
-    target: &str,
-    config: TopologyConfig,
-) -> Result<TopologyResult> {
+pub async fn check_topology(target: &str, config: TopologyConfig) -> Result<TopologyResult> {
     let base_url = normalize_url(target);
     let base_parsed = Url::parse(&base_url).context("Invalid base URL")?;
     let base_host = base_parsed.host_str().unwrap_or("").to_lowercase();
@@ -560,7 +557,10 @@ fn generate_issues(
         issues.push(TopologyIssue {
             severity,
             category: "broken-links".to_string(),
-            message: format!("{} broken links found (4xx/5xx responses)", broken_links.len()),
+            message: format!(
+                "{} broken links found (4xx/5xx responses)",
+                broken_links.len()
+            ),
         });
     }
 
@@ -602,7 +602,8 @@ fn generate_issues(
         issues.push(TopologyIssue {
             severity: Severity::Low,
             category: "structure".to_string(),
-            message: "No internal links discovered - page may be orphaned or standalone".to_string(),
+            message: "No internal links discovered - page may be orphaned or standalone"
+                .to_string(),
         });
     }
 
@@ -620,10 +621,7 @@ mod tests {
             normalize_url("https://example.com/path/"),
             "https://example.com/path"
         );
-        assert_eq!(
-            normalize_url("http://example.com"),
-            "http://example.com"
-        );
+        assert_eq!(normalize_url("http://example.com"), "http://example.com");
     }
 
     #[test]
@@ -631,7 +629,10 @@ mod tests {
         assert!(is_same_origin("https://example.com/page", "example.com"));
         assert!(is_same_origin("https://EXAMPLE.COM/page", "example.com"));
         assert!(!is_same_origin("https://other.com/page", "example.com"));
-        assert!(!is_same_origin("https://sub.example.com/page", "example.com"));
+        assert!(!is_same_origin(
+            "https://sub.example.com/page",
+            "example.com"
+        ));
     }
 
     #[test]
@@ -708,6 +709,9 @@ mod tests {
 
         let structure = build_site_structure(&urls);
         assert_eq!(structure.max_depth, 2);
-        assert!(structure.paths.iter().any(|p| p.name == "blog" && p.count == 2));
+        assert!(structure
+            .paths
+            .iter()
+            .any(|p| p.name == "blog" && p.count == 2));
     }
 }

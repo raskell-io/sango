@@ -354,7 +354,10 @@ fn generate_issues(
                 issues.push(HeaderIssue {
                     severity: Severity::Low,
                     header: "X-Content-Type-Options".to_string(),
-                    message: format!("X-Content-Type-Options should be 'nosniff', got '{}'", value),
+                    message: format!(
+                        "X-Content-Type-Options should be 'nosniff', got '{}'",
+                        value
+                    ),
                 });
             }
         }
@@ -432,7 +435,10 @@ mod tests {
 
     #[test]
     fn test_parse_csp() {
-        let csp = parse_csp("default-src 'self'; script-src 'self' 'unsafe-inline'", false);
+        let csp = parse_csp(
+            "default-src 'self'; script-src 'self' 'unsafe-inline'",
+            false,
+        );
         assert!(csp.has_default_src);
         assert!(csp.has_script_src);
         assert!(csp.allows_unsafe_inline);

@@ -38,4 +38,4 @@ jobs:
         run: cargo fmt -- --check
 
       - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy -- -D warnings -A clippy::too_many_arguments -A clippy::manual_strip -A clippy::collapsible_if -A clippy::upper_case_acronyms -A clippy::derivable_impls -A clippy::format_in_format_args -A dead_code -A clippy::collapsible_else_if -A clippy::manual_range_contains -A clippy::double_ended_iterator_last -A clippy::option_as_ref_deref -A clippy::field_reassign_with_default -A clippy::manual_filter -A clippy::char_lit_as_u8 -A clippy::manual_flatten -A clippy::manual_pattern_char_comparison

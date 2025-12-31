@@ -114,7 +114,9 @@ fn detect_frameworks(document: &Html, body: &str) -> Vec<String> {
 
     // React (check if not already detected via Next.js)
     if !frameworks.contains(&"Next.js".to_string())
-        && (body.contains("__react") || body.contains("data-reactroot") || body.contains("react-dom"))
+        && (body.contains("__react")
+            || body.contains("data-reactroot")
+            || body.contains("react-dom"))
     {
         frameworks.push("React".to_string());
     }
@@ -184,8 +186,8 @@ fn detect_frameworks(document: &Html, body: &str) -> Vec<String> {
 
 fn count_tailwind_classes(body: &str) -> usize {
     let patterns = [
-        "flex ", "grid ", "p-", "m-", "text-", "bg-", "w-", "h-",
-        "rounded-", "shadow-", "border-", "gap-",
+        "flex ", "grid ", "p-", "m-", "text-", "bg-", "w-", "h-", "rounded-", "shadow-", "border-",
+        "gap-",
     ];
     patterns.iter().filter(|p| body.contains(*p)).count()
 }
@@ -276,7 +278,10 @@ fn detect_analytics(body: &str) -> Vec<String> {
     let mut analytics = Vec::new();
 
     let patterns = [
-        (vec!["google-analytics", "googletagmanager", "gtag(", "gtm.js"], "Google Analytics"),
+        (
+            vec!["google-analytics", "googletagmanager", "gtag(", "gtm.js"],
+            "Google Analytics",
+        ),
         (vec!["segment.com", "analytics.min.js"], "Segment"),
         (vec!["hotjar"], "Hotjar"),
         (vec!["plausible.io", "plausible"], "Plausible"),

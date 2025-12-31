@@ -65,11 +65,8 @@ fn parse_content_type(content_type: Option<&str>) -> (Option<String>, Option<Str
 
     let charset = parts.find_map(|part| {
         let part = part.trim().to_lowercase();
-        if part.starts_with("charset=") {
-            Some(part[8..].trim_matches('"').to_string())
-        } else {
-            None
-        }
+        part.strip_prefix("charset=")
+            .map(|s| s.trim_matches('"').to_string())
     });
 
     (mime_type, charset)

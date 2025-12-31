@@ -153,7 +153,10 @@ pub async fn check_techstack(target: &str, timeout: Duration) -> Result<TechStac
     // Fetch the page
     let response = client
         .get(&url)
-        .header("User-Agent", "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)")
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (compatible; Sango/1.0; +https://github.com/raskell-io/sango)",
+        )
         .send()
         .await
         .context(format!("Failed to fetch {}", url))?;
@@ -166,15 +169,37 @@ pub async fn check_techstack(target: &str, timeout: Duration) -> Result<TechStac
         let name_lower = name.as_str().to_lowercase();
         if let Ok(v) = value.to_str() {
             match name_lower.as_str() {
-                "server" | "x-powered-by" | "x-aspnet-version" | "x-aspnetmvc-version" |
-                "x-drupal-cache" | "x-generator" | "x-shopify-stage" | "x-wix-request-id" |
-                "x-vercel-id" | "x-vercel-cache" | "x-netlify-request-id" | "x-nf-request-id" |
-                "cf-ray" | "cf-cache-status" | "x-amz-cf-id" | "x-amz-cf-pop" |
-                "x-cache" | "x-served-by" | "x-timer" | "fastly-debug-digest" |
-                "x-akamai-transformed" | "x-cdn" | "x-edge-location" |
-                "x-frame-options" | "x-xss-protection" | "x-content-type-options" |
-                "x-runtime" | "x-request-id" | "x-github-request-id" |
-                "x-nextjs-cache" | "x-nextjs-matched-path" => {
+                "server"
+                | "x-powered-by"
+                | "x-aspnet-version"
+                | "x-aspnetmvc-version"
+                | "x-drupal-cache"
+                | "x-generator"
+                | "x-shopify-stage"
+                | "x-wix-request-id"
+                | "x-vercel-id"
+                | "x-vercel-cache"
+                | "x-netlify-request-id"
+                | "x-nf-request-id"
+                | "cf-ray"
+                | "cf-cache-status"
+                | "x-amz-cf-id"
+                | "x-amz-cf-pop"
+                | "x-cache"
+                | "x-served-by"
+                | "x-timer"
+                | "fastly-debug-digest"
+                | "x-akamai-transformed"
+                | "x-cdn"
+                | "x-edge-location"
+                | "x-frame-options"
+                | "x-xss-protection"
+                | "x-content-type-options"
+                | "x-runtime"
+                | "x-request-id"
+                | "x-github-request-id"
+                | "x-nextjs-cache"
+                | "x-nextjs-matched-path" => {
                     signals.headers.insert(name_lower, v.to_string());
                 }
                 "set-cookie" => {
@@ -229,13 +254,17 @@ fn extract_html_signals(document: &Html, signals: &mut TechSignals) {
     // Extract meta tags
     if let Ok(selector) = Selector::parse("meta") {
         for element in document.select(&selector) {
-            let name = element.value().attr("name")
+            let name = element
+                .value()
+                .attr("name")
                 .or_else(|| element.value().attr("property"))
                 .unwrap_or_default();
             let content = element.value().attr("content").unwrap_or_default();
 
             if !name.is_empty() && !content.is_empty() {
-                signals.meta_tags.insert(name.to_string(), content.to_string());
+                signals
+                    .meta_tags
+                    .insert(name.to_string(), content.to_string());
             }
 
             // Check for generator
@@ -260,7 +289,11 @@ fn extract_html_signals(document: &Html, signals: &mut TechSignals) {
             let text = element.text().collect::<String>();
             // Store first 500 chars of inline scripts for pattern matching
             if !text.trim().is_empty() {
-                let preview = if text.len() > 500 { &text[..500] } else { &text };
+                let preview = if text.len() > 500 {
+                    &text[..500]
+                } else {
+                    &text
+                };
                 signals.script_sources.push(format!("inline:{}", preview));
             }
         }
@@ -346,7 +379,10 @@ fn parse_server_string(server: &str) -> (String, Option<String>) {
     }
 
     // Return raw value if no match
-    (server.split('/').next().unwrap_or(server).to_string(), extract_version(server))
+    (
+        server.split('/').next().unwrap_or(server).to_string(),
+        extract_version(server),
+    )
 }
 
 /// Extract version from a string like "nginx/1.21.0" or "PHP/8.1.0"
@@ -354,15 +390,28 @@ fn extract_version(s: &str) -> Option<String> {
     // Look for /version pattern
     if let Some(idx) = s.find('/') {
         let version_part = &s[idx + 1..];
-        let version = version_part.split_whitespace().next().unwrap_or(version_part);
-        if version.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+        let version = version_part
+            .split_whitespace()
+            .next()
+            .unwrap_or(version_part);
+        if version
+            .chars()
+            .next()
+            .map(|c| c.is_ascii_digit())
+            .unwrap_or(false)
+        {
             return Some(version.to_string());
         }
     }
 
     // Look for version in parentheses or after space
     for part in s.split_whitespace() {
-        if part.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+        if part
+            .chars()
+            .next()
+            .map(|c| c.is_ascii_digit())
+            .unwrap_or(false)
+        {
             return Some(part.trim_matches(|c| c == '(' || c == ')').to_string());
         }
     }
@@ -402,7 +451,9 @@ fn detect_cdn(signals: &TechSignals) -> Option<CdnInfo> {
         return Some(CdnInfo {
             name: "Fastly".to_string(),
             features,
-            edge_location: signals.headers.get("x-served-by")
+            edge_location: signals
+                .headers
+                .get("x-served-by")
                 .and_then(|s| s.split(',').next())
                 .map(|s| s.trim().to_string()),
             confidence: 0.95,
@@ -443,7 +494,9 @@ fn detect_cdn(signals: &TechSignals) -> Option<CdnInfo> {
         return Some(CdnInfo {
             name: "Vercel".to_string(),
             features,
-            edge_location: signals.headers.get("x-vercel-id")
+            edge_location: signals
+                .headers
+                .get("x-vercel-id")
                 .and_then(|s| s.split("::").nth(1))
                 .map(|s| s.to_string()),
             confidence: 1.0,
@@ -451,7 +504,9 @@ fn detect_cdn(signals: &TechSignals) -> Option<CdnInfo> {
     }
 
     // Netlify
-    if signals.headers.contains_key("x-nf-request-id") || signals.headers.contains_key("x-netlify-request-id") {
+    if signals.headers.contains_key("x-nf-request-id")
+        || signals.headers.contains_key("x-netlify-request-id")
+    {
         return Some(CdnInfo {
             name: "Netlify".to_string(),
             features,
@@ -478,10 +533,11 @@ fn detect_frameworks(signals: &TechSignals, body: &str) -> Vec<FrameworkInfo> {
     let mut frameworks = Vec::new();
 
     // Next.js
-    if signals.headers.contains_key("x-nextjs-cache") ||
-       signals.headers.contains_key("x-nextjs-matched-path") ||
-       body.contains("/_next/") ||
-       body.contains("__NEXT_DATA__") {
+    if signals.headers.contains_key("x-nextjs-cache")
+        || signals.headers.contains_key("x-nextjs-matched-path")
+        || body.contains("/_next/")
+        || body.contains("__NEXT_DATA__")
+    {
         let mut evidence = Vec::new();
         if signals.headers.contains_key("x-nextjs-cache") {
             evidence.push("x-nextjs-cache header".to_string());
@@ -520,8 +576,9 @@ fn detect_frameworks(signals: &TechSignals, body: &str) -> Vec<FrameworkInfo> {
     }
 
     // React (generic, lower confidence than Next.js)
-    if (body.contains("react") || body.contains("React")) &&
-       body.contains("data-reactroot") || body.contains("__REACT_DEVTOOLS") {
+    if (body.contains("react") || body.contains("React")) && body.contains("data-reactroot")
+        || body.contains("__REACT_DEVTOOLS")
+    {
         let mut evidence = Vec::new();
         if body.contains("data-reactroot") {
             evidence.push("data-reactroot attribute".to_string());
@@ -586,7 +643,11 @@ fn detect_frameworks(signals: &TechSignals, body: &str) -> Vec<FrameworkInfo> {
         }
         frameworks.push(FrameworkInfo {
             name: if is_kit { "SvelteKit" } else { "Svelte" }.to_string(),
-            category: if is_kit { FrameworkCategory::Fullstack } else { FrameworkCategory::Frontend },
+            category: if is_kit {
+                FrameworkCategory::Fullstack
+            } else {
+                FrameworkCategory::Frontend
+            },
             version: None,
             confidence: 0.8,
             evidence,
@@ -594,9 +655,14 @@ fn detect_frameworks(signals: &TechSignals, body: &str) -> Vec<FrameworkInfo> {
     }
 
     // Ruby on Rails
-    if signals.headers.get("x-runtime").map(|v| v.contains(".")).unwrap_or(false) ||
-       signals.cookies.iter().any(|c| c.contains("_session")) ||
-       body.contains("csrf-token") && body.contains("csrf-param") {
+    if signals
+        .headers
+        .get("x-runtime")
+        .map(|v| v.contains("."))
+        .unwrap_or(false)
+        || signals.cookies.iter().any(|c| c.contains("_session"))
+        || body.contains("csrf-token") && body.contains("csrf-param")
+    {
         let mut evidence = Vec::new();
         if signals.headers.contains_key("x-runtime") {
             evidence.push("X-Runtime header".to_string());
@@ -614,7 +680,11 @@ fn detect_frameworks(signals: &TechSignals, body: &str) -> Vec<FrameworkInfo> {
     }
 
     // Django
-    if signals.cookies.iter().any(|c| c.contains("csrftoken") || c.contains("django")) {
+    if signals
+        .cookies
+        .iter()
+        .any(|c| c.contains("csrftoken") || c.contains("django"))
+    {
         let mut evidence = Vec::new();
         if signals.cookies.iter().any(|c| c.contains("csrftoken")) {
             evidence.push("csrftoken cookie".to_string());
@@ -629,9 +699,17 @@ fn detect_frameworks(signals: &TechSignals, body: &str) -> Vec<FrameworkInfo> {
     }
 
     // Laravel
-    if signals.cookies.iter().any(|c| c.contains("laravel_session") || c.contains("XSRF-TOKEN")) {
+    if signals
+        .cookies
+        .iter()
+        .any(|c| c.contains("laravel_session") || c.contains("XSRF-TOKEN"))
+    {
         let mut evidence = Vec::new();
-        if signals.cookies.iter().any(|c| c.contains("laravel_session")) {
+        if signals
+            .cookies
+            .iter()
+            .any(|c| c.contains("laravel_session"))
+        {
             evidence.push("laravel_session cookie".to_string());
         }
         frameworks.push(FrameworkInfo {
@@ -644,7 +722,12 @@ fn detect_frameworks(signals: &TechSignals, body: &str) -> Vec<FrameworkInfo> {
     }
 
     // Express.js (often detected via X-Powered-By)
-    if signals.headers.get("x-powered-by").map(|v| v.to_lowercase().contains("express")).unwrap_or(false) {
+    if signals
+        .headers
+        .get("x-powered-by")
+        .map(|v| v.to_lowercase().contains("express"))
+        .unwrap_or(false)
+    {
         frameworks.push(FrameworkInfo {
             name: "Express.js".to_string(),
             category: FrameworkCategory::Backend,
@@ -715,8 +798,14 @@ fn extract_angular_version(body: &str) -> Option<String> {
 /// Detect CMS
 fn detect_cms(signals: &TechSignals, body: &str) -> Option<CmsInfo> {
     // WordPress
-    if body.contains("/wp-content/") || body.contains("/wp-includes/") ||
-       signals.generator.as_ref().map(|g| g.to_lowercase().contains("wordpress")).unwrap_or(false) {
+    if body.contains("/wp-content/")
+        || body.contains("/wp-includes/")
+        || signals
+            .generator
+            .as_ref()
+            .map(|g| g.to_lowercase().contains("wordpress"))
+            .unwrap_or(false)
+    {
         let mut evidence = Vec::new();
         let mut version = None;
 
@@ -739,9 +828,14 @@ fn detect_cms(signals: &TechSignals, body: &str) -> Option<CmsInfo> {
     }
 
     // Drupal
-    if signals.headers.contains_key("x-drupal-cache") ||
-       body.contains("Drupal.settings") ||
-       signals.generator.as_ref().map(|g| g.to_lowercase().contains("drupal")).unwrap_or(false) {
+    if signals.headers.contains_key("x-drupal-cache")
+        || body.contains("Drupal.settings")
+        || signals
+            .generator
+            .as_ref()
+            .map(|g| g.to_lowercase().contains("drupal"))
+            .unwrap_or(false)
+    {
         let mut evidence = Vec::new();
         if signals.headers.contains_key("x-drupal-cache") {
             evidence.push("X-Drupal-Cache header".to_string());
@@ -755,9 +849,10 @@ fn detect_cms(signals: &TechSignals, body: &str) -> Option<CmsInfo> {
     }
 
     // Shopify
-    if signals.headers.contains_key("x-shopify-stage") ||
-       body.contains("cdn.shopify.com") ||
-       body.contains("Shopify.theme") {
+    if signals.headers.contains_key("x-shopify-stage")
+        || body.contains("cdn.shopify.com")
+        || body.contains("Shopify.theme")
+    {
         let mut evidence = Vec::new();
         if signals.headers.contains_key("x-shopify-stage") {
             evidence.push("X-Shopify-Stage header".to_string());
@@ -794,8 +889,13 @@ fn detect_cms(signals: &TechSignals, body: &str) -> Option<CmsInfo> {
     }
 
     // Ghost
-    if signals.generator.as_ref().map(|g| g.to_lowercase().contains("ghost")).unwrap_or(false) ||
-       body.contains("ghost.io") {
+    if signals
+        .generator
+        .as_ref()
+        .map(|g| g.to_lowercase().contains("ghost"))
+        .unwrap_or(false)
+        || body.contains("ghost.io")
+    {
         return Some(CmsInfo {
             name: "Ghost".to_string(),
             version: signals.generator.as_ref().and_then(|g| extract_version(g)),
@@ -815,7 +915,12 @@ fn detect_cms(signals: &TechSignals, body: &str) -> Option<CmsInfo> {
     }
 
     // Hugo (static site generator often used as CMS)
-    if signals.generator.as_ref().map(|g| g.to_lowercase().contains("hugo")).unwrap_or(false) {
+    if signals
+        .generator
+        .as_ref()
+        .map(|g| g.to_lowercase().contains("hugo"))
+        .unwrap_or(false)
+    {
         return Some(CmsInfo {
             name: "Hugo".to_string(),
             version: signals.generator.as_ref().and_then(|g| extract_version(g)),
@@ -825,7 +930,12 @@ fn detect_cms(signals: &TechSignals, body: &str) -> Option<CmsInfo> {
     }
 
     // Jekyll
-    if signals.generator.as_ref().map(|g| g.to_lowercase().contains("jekyll")).unwrap_or(false) {
+    if signals
+        .generator
+        .as_ref()
+        .map(|g| g.to_lowercase().contains("jekyll"))
+        .unwrap_or(false)
+    {
         return Some(CmsInfo {
             name: "Jekyll".to_string(),
             version: signals.generator.as_ref().and_then(|g| extract_version(g)),
@@ -860,7 +970,12 @@ fn detect_js_libraries(signals: &TechSignals, body: &str) -> Vec<JsLibraryInfo> 
     }
 
     // Bootstrap
-    if signals.script_sources.iter().any(|s| s.contains("bootstrap")) || body.contains("bootstrap") {
+    if signals
+        .script_sources
+        .iter()
+        .any(|s| s.contains("bootstrap"))
+        || body.contains("bootstrap")
+    {
         libraries.push(JsLibraryInfo {
             name: "Bootstrap".to_string(),
             version: None,
@@ -869,13 +984,24 @@ fn detect_js_libraries(signals: &TechSignals, body: &str) -> Vec<JsLibraryInfo> 
     }
 
     // Tailwind CSS (check for typical Tailwind classes)
-    if body.contains("class=\"") &&
-       (body.contains(" flex ") || body.contains(" grid ") || body.contains(" bg-") || body.contains(" text-")) {
+    if body.contains("class=\"")
+        && (body.contains(" flex ")
+            || body.contains(" grid ")
+            || body.contains(" bg-")
+            || body.contains(" text-"))
+    {
         // This is a weak signal, many sites use these class names
         // Look for more specific Tailwind patterns
-        if body.contains("tailwind") ||
-           signals.script_sources.iter().any(|s| s.contains("tailwind")) ||
-           body.contains("hover:") || body.contains("focus:") || body.contains("md:") || body.contains("lg:") {
+        if body.contains("tailwind")
+            || signals
+                .script_sources
+                .iter()
+                .any(|s| s.contains("tailwind"))
+            || body.contains("hover:")
+            || body.contains("focus:")
+            || body.contains("md:")
+            || body.contains("lg:")
+        {
             libraries.push(JsLibraryInfo {
                 name: "Tailwind CSS".to_string(),
                 version: None,
@@ -894,7 +1020,10 @@ fn detect_js_libraries(signals: &TechSignals, body: &str) -> Vec<JsLibraryInfo> 
     }
 
     // Alpine.js
-    if body.contains("x-data") || body.contains("x-init") || signals.script_sources.iter().any(|s| s.contains("alpine")) {
+    if body.contains("x-data")
+        || body.contains("x-init")
+        || signals.script_sources.iter().any(|s| s.contains("alpine"))
+    {
         libraries.push(JsLibraryInfo {
             name: "Alpine.js".to_string(),
             version: None,
@@ -941,7 +1070,10 @@ fn detect_analytics(_signals: &TechSignals, body: &str) -> Vec<AnalyticsInfo> {
     let mut analytics = Vec::new();
 
     // Google Analytics (GA4)
-    if body.contains("gtag") || body.contains("googletagmanager") || body.contains("G-") && body.contains("google") {
+    if body.contains("gtag")
+        || body.contains("googletagmanager")
+        || body.contains("G-") && body.contains("google")
+    {
         let tracking_id = extract_ga_tracking_id(body);
         analytics.push(AnalyticsInfo {
             name: "Google Analytics".to_string(),
@@ -1027,7 +1159,8 @@ fn extract_pattern(body: &str, prefix: &str, max_len: usize) -> Option<String> {
     if let Some(idx) = body.find(prefix) {
         let start = idx;
         let remaining = &body[start..];
-        let end = remaining.find(|c: char| !c.is_ascii_alphanumeric() && c != '-')
+        let end = remaining
+            .find(|c: char| !c.is_ascii_alphanumeric() && c != '-')
             .unwrap_or(remaining.len().min(max_len));
         let result = &remaining[..end];
         if result.len() > prefix.len() {
@@ -1052,7 +1185,11 @@ fn generate_issues(
             issues.push(TechStackIssue {
                 severity: Severity::Low,
                 category: "disclosure".to_string(),
-                message: format!("Server version disclosed: {} {}", s.name, s.version.as_ref().unwrap()),
+                message: format!(
+                    "Server version disclosed: {} {}",
+                    s.name,
+                    s.version.as_ref().unwrap()
+                ),
             });
         }
     }
@@ -1119,8 +1256,12 @@ mod tests {
     #[test]
     fn test_detect_cdn_cloudflare() {
         let mut signals = TechSignals::default();
-        signals.headers.insert("cf-ray".to_string(), "12345-SJC".to_string());
-        signals.headers.insert("cf-cache-status".to_string(), "HIT".to_string());
+        signals
+            .headers
+            .insert("cf-ray".to_string(), "12345-SJC".to_string());
+        signals
+            .headers
+            .insert("cf-cache-status".to_string(), "HIT".to_string());
 
         let cdn = detect_cdn(&signals);
         assert!(cdn.is_some());
@@ -1132,7 +1273,9 @@ mod tests {
     #[test]
     fn test_detect_cdn_vercel() {
         let mut signals = TechSignals::default();
-        signals.headers.insert("x-vercel-id".to_string(), "iad1::abc123".to_string());
+        signals
+            .headers
+            .insert("x-vercel-id".to_string(), "iad1::abc123".to_string());
 
         let cdn = detect_cdn(&signals);
         assert!(cdn.is_some());
@@ -1148,10 +1291,16 @@ mod tests {
     #[test]
     fn test_extract_pattern() {
         let body = "window.ga('create', 'UA-12345678-1', 'auto');";
-        assert_eq!(extract_pattern(body, "UA-", 15), Some("UA-12345678-1".to_string()));
+        assert_eq!(
+            extract_pattern(body, "UA-", 15),
+            Some("UA-12345678-1".to_string())
+        );
 
         let body = "gtag('config', 'G-ABC123DEF4');";
-        assert_eq!(extract_pattern(body, "G-", 12), Some("G-ABC123DEF4".to_string()));
+        assert_eq!(
+            extract_pattern(body, "G-", 12),
+            Some("G-ABC123DEF4".to_string())
+        );
     }
 
     #[test]

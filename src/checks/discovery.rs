@@ -151,10 +151,16 @@ const COMMON_PATHS: &[&str] = &[
 /// Well-known endpoints to check
 const WELL_KNOWN_PATHS: &[(&str, &str)] = &[
     ("/.well-known/security.txt", "Security contact information"),
-    ("/.well-known/openid-configuration", "OpenID Connect discovery"),
+    (
+        "/.well-known/openid-configuration",
+        "OpenID Connect discovery",
+    ),
     ("/.well-known/jwks.json", "JSON Web Key Set"),
     ("/.well-known/assetlinks.json", "Android App Links"),
-    ("/.well-known/apple-app-site-association", "Apple Universal Links"),
+    (
+        "/.well-known/apple-app-site-association",
+        "Apple Universal Links",
+    ),
     ("/.well-known/change-password", "Password change URL"),
     ("/.well-known/host-meta", "Web Host Metadata"),
     ("/.well-known/nodeinfo", "NodeInfo for federated services"),
@@ -208,7 +214,11 @@ fn normalize_url(target: &str) -> String {
 
     // Remove trailing slash and path to get base URL
     if let Ok(parsed) = url::Url::parse(&url) {
-        format!("{}://{}", parsed.scheme(), parsed.host_str().unwrap_or(target))
+        format!(
+            "{}://{}",
+            parsed.scheme(),
+            parsed.host_str().unwrap_or(target)
+        )
     } else {
         url
     }
@@ -344,7 +354,11 @@ fn get_sitemap_urls(robots: &Option<RobotsInfo>, base_url: &str) -> Vec<String> 
 }
 
 /// Fetch and parse sitemap
-async fn fetch_sitemap(client: &Client, urls: &[String], _timeout: Duration) -> Option<SitemapInfo> {
+async fn fetch_sitemap(
+    client: &Client,
+    urls: &[String],
+    _timeout: Duration,
+) -> Option<SitemapInfo> {
     for url in urls {
         let is_gzipped = url.ends_with(".gz");
 
@@ -425,8 +439,8 @@ fn parse_sitemap(content: &str, url: &str) -> Option<SitemapInfo> {
                     let loc = extract_xml_tag(url_match, "loc");
                     let lastmod = extract_xml_tag(url_match, "lastmod");
                     let changefreq = extract_xml_tag(url_match, "changefreq");
-                    let priority = extract_xml_tag(url_match, "priority")
-                        .and_then(|p| p.parse::<f32>().ok());
+                    let priority =
+                        extract_xml_tag(url_match, "priority").and_then(|p| p.parse::<f32>().ok());
 
                     if let Some(loc) = loc {
                         sample_urls.push(SitemapEntry {
@@ -653,9 +667,7 @@ fn generate_issues(
     }
 
     // Security.txt check
-    let has_security_txt = well_known
-        .iter()
-        .any(|w| w.path.contains("security.txt"));
+    let has_security_txt = well_known.iter().any(|w| w.path.contains("security.txt"));
 
     if !has_security_txt {
         issues.push(DiscoveryIssue {
@@ -766,15 +778,24 @@ Disallow: /
     #[test]
     fn test_normalize_url() {
         assert_eq!(normalize_url("example.com"), "https://example.com");
-        assert_eq!(normalize_url("https://example.com/path"), "https://example.com");
+        assert_eq!(
+            normalize_url("https://example.com/path"),
+            "https://example.com"
+        );
         assert_eq!(normalize_url("http://example.com"), "http://example.com");
     }
 
     #[test]
     fn test_extract_xml_tag() {
         let content = "<loc>https://example.com</loc><lastmod>2024-01-01</lastmod>";
-        assert_eq!(extract_xml_tag(content, "loc"), Some("https://example.com".to_string()));
-        assert_eq!(extract_xml_tag(content, "lastmod"), Some("2024-01-01".to_string()));
+        assert_eq!(
+            extract_xml_tag(content, "loc"),
+            Some("https://example.com".to_string())
+        );
+        assert_eq!(
+            extract_xml_tag(content, "lastmod"),
+            Some("2024-01-01".to_string())
+        );
         assert_eq!(extract_xml_tag(content, "missing"), None);
     }
 }

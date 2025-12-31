@@ -43,7 +43,11 @@ pub struct Issue {
 
 impl Issue {
     /// Create a new issue
-    pub fn new(severity: Severity, category: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn new(
+        severity: Severity,
+        category: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
         Self {
             severity,
             category: category.into(),

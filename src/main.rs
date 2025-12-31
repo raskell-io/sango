@@ -53,6 +53,19 @@ struct Args {
     #[arg(short, long)]
     interactive: bool,
 
+    /// Run only specific checks (comma-separated)
+    ///
+    /// Available checks:
+    ///   tls, http, headers, latency, discovery,
+    ///   techstack, seo, aeo, content, topology, assets
+    ///
+    /// Examples:
+    ///   --only tls,http           Run only TLS and HTTP checks
+    ///   --only topology,assets    Run only topology and asset analysis
+    ///   --only seo,aeo            Run only discoverability checks
+    #[arg(long, value_name = "CHECKS", value_delimiter = ',')]
+    only: Option<Vec<String>>,
+
     /// Skip TLS/SSL certificate checks
     ///
     /// When enabled, skips:
@@ -167,6 +180,133 @@ struct Args {
     #[arg(long)]
     skip_content: bool,
 
+    /// Skip topology/link spidering analysis
+    ///
+    /// When enabled, skips:
+    ///   - Internal link discovery
+    ///   - Site structure mapping
+    ///   - Broken link detection
+    ///   - Redirect chain analysis
+    ///
+    /// Topology makes multiple HTTP requests to discovered URLs.
+    /// Skip this for faster scans.
+    #[arg(long)]
+    skip_topology: bool,
+
+    /// Skip asset loading analysis
+    ///
+    /// When enabled, skips:
+    ///   - Asset extraction (JS, CSS, images, fonts)
+    ///   - Load time measurement
+    ///   - Provenance classification (CDN, third-party)
+    ///   - Cache header analysis for assets
+    ///
+    /// Asset analysis makes HTTP requests to each discovered asset.
+    /// Skip this for faster scans.
+    #[arg(long)]
+    skip_assets: bool,
+
+    /// Maximum URLs to spider for topology check
+    ///
+    /// Limits the number of internal URLs to probe during topology
+    /// analysis. Higher values give more complete site maps but
+    /// take longer. Default: 50
+    #[arg(long, default_value = "50", value_name = "COUNT")]
+    max_urls: usize,
+
+    /// Maximum assets to analyze
+    ///
+    /// Limits the number of assets (JS, CSS, images, etc.) to
+    /// analyze for timing and provenance. Higher values give more
+    /// complete analysis but take longer. Default: 50
+    #[arg(long, default_value = "50", value_name = "COUNT")]
+    max_assets: usize,
+
+    // ─────────────────────────────────────────────────────────────
+    // Topology Configuration
+    // ─────────────────────────────────────────────────────────────
+
+    /// Include sitemap URLs in topology discovery
+    ///
+    /// When enabled, fetches sitemap.xml and includes those URLs
+    /// in the topology analysis. Disable for faster scans.
+    #[arg(long, default_value = "true", action = clap::ArgAction::Set)]
+    topology_include_sitemap: bool,
+
+    /// Follow and report external links in topology
+    ///
+    /// When enabled, counts external links found on the page
+    /// (they are not probed, just counted).
+    #[arg(long, default_value = "true", action = clap::ArgAction::Set)]
+    topology_count_external: bool,
+
+    // ─────────────────────────────────────────────────────────────
+    // Assets Configuration
+    // ─────────────────────────────────────────────────────────────
+
+    /// Slow asset threshold in milliseconds
+    ///
+    /// Assets taking longer than this are flagged as slow.
+    /// Default: 500ms
+    #[arg(long, default_value = "500", value_name = "MS")]
+    assets_slow_threshold: u64,
+
+    /// Very slow asset threshold in milliseconds
+    ///
+    /// Assets taking longer than this are flagged as critical.
+    /// Default: 2000ms
+    #[arg(long, default_value = "2000", value_name = "MS")]
+    assets_very_slow_threshold: u64,
+
+    /// Large JavaScript threshold in KB
+    ///
+    /// JS files larger than this are flagged.
+    /// Default: 100KB
+    #[arg(long, default_value = "100", value_name = "KB")]
+    assets_large_js_kb: u64,
+
+    /// Large image threshold in KB
+    ///
+    /// Images larger than this are flagged.
+    /// Default: 500KB
+    #[arg(long, default_value = "500", value_name = "KB")]
+    assets_large_image_kb: u64,
+
+    /// Third-party warning threshold (percentage)
+    ///
+    /// Warn if more than this percentage of assets are third-party.
+    /// Default: 50%
+    #[arg(long, default_value = "50", value_name = "PERCENT")]
+    assets_third_party_threshold: u64,
+
+    /// Include font assets in analysis
+    #[arg(long, default_value = "true", action = clap::ArgAction::Set)]
+    assets_include_fonts: bool,
+
+    /// Include media assets (video/audio) in analysis
+    #[arg(long, default_value = "true", action = clap::ArgAction::Set)]
+    assets_include_media: bool,
+
+    // ─────────────────────────────────────────────────────────────
+    // Latency Configuration
+    // ─────────────────────────────────────────────────────────────
+
+    /// DNS lookup warning threshold in milliseconds
+    #[arg(long, default_value = "100", value_name = "MS")]
+    latency_dns_warn: u64,
+
+    /// TCP connect warning threshold in milliseconds
+    #[arg(long, default_value = "100", value_name = "MS")]
+    latency_tcp_warn: u64,
+
+    /// TLS handshake warning threshold in milliseconds
+    #[arg(long, default_value = "200", value_name = "MS")]
+    latency_tls_warn: u64,
+
+    /// TTFB warning threshold in milliseconds
+    #[arg(long, default_value = "500", value_name = "MS")]
+    latency_ttfb_warn: u64,
+
     /// Connection timeout in seconds
     ///
     /// Maximum time to wait for each HTTP request. Applies to:
@@ -242,6 +382,14 @@ WHAT SANGO CHECKS:
     Validates Content-Type, checks compression, analyzes cache headers.
     WHY: Compression saves 60-80% bandwidth, caching reduces server load.
 
+  Topology (--skip-topology to disable)
+    Discovers internal links, builds site structure map, finds broken links.
+    WHY: Identifies dead links, redirect chains, and site architecture.
+
+  Assets (--skip-assets to disable)
+    Analyzes JS, CSS, images, fonts - measures load time and provenance.
+    WHY: Identifies slow/large assets, third-party dependencies, caching issues.
+
 EXAMPLES:
     sango https://example.com              Full diagnostic scan
     sango example.com -f json              JSON output for scripting
@@ -249,6 +397,22 @@ EXAMPLES:
     sango example.com -i                   Interactive TUI mode
     sango example.com --skip-discovery     Faster scan, fewer requests
     sango example.com -t 30                30-second timeout for slow sites
+
+    # Run only specific checks
+    sango example.com --only tls,http,headers
+    sango example.com --only topology,assets
+    sango example.com --only seo,aeo
+
+    # Deep topology scan (more URLs)
+    sango example.com --only topology --max-urls 200
+
+    # Deep asset analysis with custom thresholds
+    sango example.com --only assets --max-assets 200 \
+        --assets-slow-threshold 300 --assets-large-js-kb 50
+
+    # Latency-focused scan with strict thresholds
+    sango example.com --only latency \
+        --latency-dns-warn 50 --latency-ttfb-warn 200
 
 EXIT CODES:
     0 - Healthy or Degraded (low/medium severity issues only)
@@ -282,18 +446,75 @@ async fn main() -> Result<()> {
             .init();
     }
 
+    // Handle --only flag: if specified, skip all checks except those listed
+    let (skip_tls, skip_http, skip_headers, skip_latency, skip_discovery,
+         skip_techstack, skip_seo, skip_aeo, skip_content, skip_topology, skip_assets) =
+        if let Some(ref only_checks) = args.only {
+            let checks: std::collections::HashSet<_> = only_checks.iter()
+                .map(|s| s.to_lowercase())
+                .collect();
+            (
+                !checks.contains("tls"),
+                !checks.contains("http"),
+                !checks.contains("headers"),
+                !checks.contains("latency"),
+                !checks.contains("discovery"),
+                !checks.contains("techstack"),
+                !checks.contains("seo"),
+                !checks.contains("aeo"),
+                !checks.contains("content"),
+                !checks.contains("topology"),
+                !checks.contains("assets"),
+            )
+        } else {
+            // Use explicit skip flags
+            (
+                args.skip_tls,
+                args.skip_http,
+                args.skip_headers,
+                args.skip_latency,
+                args.skip_discovery,
+                args.skip_techstack,
+                args.skip_seo,
+                args.skip_aeo,
+                args.skip_content,
+                args.skip_topology,
+                args.skip_assets,
+            )
+        };
+
     // Build probe config
     let config = ProbeConfig {
-        skip_tls: args.skip_tls,
-        skip_http: args.skip_http,
-        skip_headers: args.skip_headers,
-        skip_latency: args.skip_latency,
-        skip_discovery: args.skip_discovery,
-        skip_techstack: args.skip_techstack,
-        skip_seo: args.skip_seo,
-        skip_aeo: args.skip_aeo,
-        skip_content: args.skip_content,
+        skip_tls,
+        skip_http,
+        skip_headers,
+        skip_latency,
+        skip_discovery,
+        skip_techstack,
+        skip_seo,
+        skip_aeo,
+        skip_content,
+        skip_topology,
+        skip_assets,
+        max_urls: args.max_urls,
+        max_assets: args.max_assets,
         timeout: Duration::from_secs(args.timeout),
+        // Topology configuration
+        topology_include_sitemap: args.topology_include_sitemap,
+        topology_count_external: args.topology_count_external,
+        // Assets configuration
+        assets_slow_threshold_ms: args.assets_slow_threshold,
+        assets_very_slow_threshold_ms: args.assets_very_slow_threshold,
+        assets_large_js_bytes: args.assets_large_js_kb * 1024,
+        assets_large_image_bytes: args.assets_large_image_kb * 1024,
+        assets_third_party_threshold: args.assets_third_party_threshold,
+        assets_include_fonts: args.assets_include_fonts,
+        assets_include_media: args.assets_include_media,
+        // Latency configuration
+        latency_dns_warn_ms: args.latency_dns_warn,
+        latency_tcp_warn_ms: args.latency_tcp_warn,
+        latency_tls_warn_ms: args.latency_tls_warn,
+        latency_ttfb_warn_ms: args.latency_ttfb_warn,
     };
 
     // Run probe

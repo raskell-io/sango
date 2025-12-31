@@ -6,7 +6,7 @@ use anyhow::Result;
 use serde::Serialize;
 use std::time::Duration;
 
-use crate::checks::{aeo, content, discovery, headers, http, latency, seo, techstack, tls};
+use crate::checks::{aeo, assets, content, discovery, headers, http, latency, seo, techstack, tls, topology};
 
 /// Result of all diagnostic probes
 #[derive(Debug, Serialize)]
@@ -33,6 +33,10 @@ pub struct ProbeResult {
     pub aeo: Option<aeo::AeoResult>,
     /// Content analysis results
     pub content: Option<content::ContentResult>,
+    /// Topology/link spidering results
+    pub topology: Option<topology::TopologyResult>,
+    /// Asset analysis results
+    pub assets: Option<assets::AssetsResult>,
     /// Overall health assessment
     pub overall_health: Health,
     /// Error messages from failed checks
@@ -83,8 +87,48 @@ pub struct ProbeConfig {
     pub skip_aeo: bool,
     /// Skip content analysis
     pub skip_content: bool,
+    /// Skip topology/link spidering
+    pub skip_topology: bool,
+    /// Skip asset analysis
+    pub skip_assets: bool,
+    /// Maximum URLs to spider for topology
+    pub max_urls: usize,
+    /// Maximum assets to analyze
+    pub max_assets: usize,
     /// Connection timeout
     pub timeout: Duration,
+
+    // Topology configuration
+    /// Include sitemap URLs in topology
+    pub topology_include_sitemap: bool,
+    /// Count external links
+    pub topology_count_external: bool,
+
+    // Assets configuration
+    /// Slow asset threshold in ms
+    pub assets_slow_threshold_ms: u64,
+    /// Very slow asset threshold in ms
+    pub assets_very_slow_threshold_ms: u64,
+    /// Large JS threshold in bytes
+    pub assets_large_js_bytes: u64,
+    /// Large image threshold in bytes
+    pub assets_large_image_bytes: u64,
+    /// Third-party warning threshold (0-100)
+    pub assets_third_party_threshold: u64,
+    /// Include font assets
+    pub assets_include_fonts: bool,
+    /// Include media assets
+    pub assets_include_media: bool,
+
+    // Latency configuration
+    /// DNS warning threshold in ms
+    pub latency_dns_warn_ms: u64,
+    /// TCP warning threshold in ms
+    pub latency_tcp_warn_ms: u64,
+    /// TLS warning threshold in ms
+    pub latency_tls_warn_ms: u64,
+    /// TTFB warning threshold in ms
+    pub latency_ttfb_warn_ms: u64,
 }
 
 impl Default for ProbeConfig {
@@ -99,7 +143,27 @@ impl Default for ProbeConfig {
             skip_seo: false,
             skip_aeo: false,
             skip_content: false,
+            skip_topology: false,
+            skip_assets: false,
+            max_urls: 50,
+            max_assets: 50,
             timeout: Duration::from_secs(10),
+            // Topology defaults
+            topology_include_sitemap: true,
+            topology_count_external: true,
+            // Assets defaults
+            assets_slow_threshold_ms: 500,
+            assets_very_slow_threshold_ms: 2000,
+            assets_large_js_bytes: 100 * 1024,      // 100KB
+            assets_large_image_bytes: 500 * 1024,   // 500KB
+            assets_third_party_threshold: 50,
+            assets_include_fonts: true,
+            assets_include_media: true,
+            // Latency defaults
+            latency_dns_warn_ms: 100,
+            latency_tcp_warn_ms: 100,
+            latency_tls_warn_ms: 200,
+            latency_ttfb_warn_ms: 500,
         }
     }
 }
@@ -119,6 +183,8 @@ pub async fn run_probe(target: &str, config: ProbeConfig) -> Result<ProbeResult>
         seo: None,
         aeo: None,
         content: None,
+        topology: None,
+        assets: None,
         overall_health: Health::Unknown,
         errors: Vec::new(),
     };
@@ -234,6 +300,47 @@ pub async fn run_probe(target: &str, config: ProbeConfig) -> Result<ProbeResult>
         }
     }
 
+    // Run topology/link spidering (after other checks since it's expensive)
+    if !config.skip_topology {
+        let topology_config = topology::TopologyConfig {
+            max_urls: config.max_urls,
+            include_sitemap: config.topology_include_sitemap,
+            count_external: config.topology_count_external,
+            timeout: config.timeout,
+        };
+        match topology::check_topology(target, topology_config).await {
+            Ok(topology_result) => {
+                result.topology = Some(topology_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("Topology: {}", e));
+            }
+        }
+    }
+
+    // Run asset analysis (after other checks since it's expensive)
+    if !config.skip_assets {
+        let assets_config = assets::AssetsConfig {
+            max_assets: config.max_assets,
+            timeout: config.timeout,
+            slow_threshold_ms: config.assets_slow_threshold_ms,
+            very_slow_threshold_ms: config.assets_very_slow_threshold_ms,
+            large_js_bytes: config.assets_large_js_bytes,
+            large_image_bytes: config.assets_large_image_bytes,
+            third_party_threshold: config.assets_third_party_threshold,
+            include_fonts: config.assets_include_fonts,
+            include_media: config.assets_include_media,
+        };
+        match assets::check_assets(target, assets_config).await {
+            Ok(assets_result) => {
+                result.assets = Some(assets_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("Assets: {}", e));
+            }
+        }
+    }
+
     // Calculate overall health based on results
     result.overall_health = calculate_health(&result);
 
@@ -337,6 +444,28 @@ fn calculate_health(result: &ProbeResult) -> Health {
     // Check content issues
     if let Some(ref content_result) = result.content {
         for issue in &content_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check topology issues
+    if let Some(ref topology_result) = result.topology {
+        for issue in &topology_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check assets issues
+    if let Some(ref assets_result) = result.assets {
+        for issue in &assets_result.issues {
             match issue.severity {
                 tls::Severity::Critical => has_critical = true,
                 tls::Severity::High => has_high = true,

@@ -92,6 +92,16 @@ pub fn print_pretty(result: &ProbeResult) {
         print_content_section(content);
     }
 
+    // Topology results
+    if let Some(ref topology) = result.topology {
+        print_topology_section(topology);
+    }
+
+    // Assets results
+    if let Some(ref assets) = result.assets {
+        print_assets_section(assets);
+    }
+
     // Footer
     println!("{}", "─".repeat(60).dimmed());
 }
@@ -1005,6 +1015,195 @@ fn print_content_section(content: &crate::checks::content::ContentResult) {
     );
 }
 
+fn print_topology_section(topology: &crate::checks::topology::TopologyResult) {
+    println!("{}", "  Topology".bold().underline());
+    println!();
+
+    // Summary
+    println!(
+        "    {} {} internal, {} external",
+        "URLs:".dimmed(),
+        topology.total_internal_urls,
+        topology.total_external_urls
+    );
+
+    // Structure
+    if !topology.structure.paths.is_empty() {
+        println!(
+            "    {} depth {}, {} top-level paths",
+            "Structure:".dimmed(),
+            topology.structure.max_depth,
+            topology.structure.paths.len()
+        );
+        for segment in topology.structure.paths.iter().take(5) {
+            println!(
+                "      {} /{} ({} pages)",
+                "·".dimmed(),
+                segment.name,
+                segment.count
+            );
+        }
+        if topology.structure.paths.len() > 5 {
+            println!(
+                "      {} ...and {} more",
+                "·".dimmed(),
+                topology.structure.paths.len() - 5
+            );
+        }
+    }
+
+    // Broken links
+    if !topology.broken_links.is_empty() {
+        let broken_color = if topology.broken_links.len() > 5 {
+            format!("{} broken", topology.broken_links.len()).red()
+        } else {
+            format!("{} broken", topology.broken_links.len()).yellow()
+        };
+        println!("    {} {}", "Links:".dimmed(), broken_color);
+        for broken in topology.broken_links.iter().take(3) {
+            println!(
+                "      {} {} [{}]",
+                "!".red(),
+                truncate(&broken.url, 40),
+                broken.status_code
+            );
+        }
+    } else {
+        println!("    {} {}", "Links:".dimmed(), "all OK".green());
+    }
+
+    // Redirects
+    if !topology.redirect_chains.is_empty() {
+        println!(
+            "    {} {} redirects",
+            "Redirects:".dimmed(),
+            topology.redirect_chains.len()
+        );
+    }
+
+    println!();
+
+    // Issues
+    print_issues(
+        &topology
+            .issues
+            .iter()
+            .map(|i| (i.severity, &i.message))
+            .collect::<Vec<_>>(),
+    );
+}
+
+fn print_assets_section(assets: &crate::checks::assets::AssetsResult) {
+    println!("{}", "  Assets".bold().underline());
+    println!();
+
+    // Summary
+    println!(
+        "    {} {} assets ({})",
+        "Total:".dimmed(),
+        assets.total_assets,
+        assets.total_size_formatted
+    );
+
+    // By type breakdown
+    let type_order = ["JavaScript", "CSS", "Image", "Font", "Media", "Other"];
+    for type_name in type_order {
+        if let Some(breakdown) = assets.by_type.get(type_name) {
+            if breakdown.count > 0 {
+                let size_str = format_asset_size(breakdown.total_size);
+                println!(
+                    "      {} {}: {} ({})",
+                    "·".dimmed(),
+                    type_name,
+                    breakdown.count,
+                    size_str.dimmed()
+                );
+            }
+        }
+    }
+
+    // Third-party percentage
+    let tp_color = if assets.third_party_percentage > 50.0 {
+        format!("{:.0}%", assets.third_party_percentage).yellow()
+    } else {
+        format!("{:.0}%", assets.third_party_percentage).green()
+    };
+    println!("    {} {}", "Third-party:".dimmed(), tp_color);
+
+    // Slowest assets
+    if !assets.slowest.is_empty() && assets.slowest[0].load_time_ms > 100 {
+        println!("    {}", "Slowest:".dimmed());
+        for asset in assets.slowest.iter().take(3) {
+            let time_color = if asset.load_time_ms > 1000 {
+                format!("{}ms", asset.load_time_ms).red()
+            } else if asset.load_time_ms > 500 {
+                format!("{}ms", asset.load_time_ms).yellow()
+            } else {
+                format!("{}ms", asset.load_time_ms).normal()
+            };
+            println!(
+                "      {} {} [{}]",
+                "·".dimmed(),
+                truncate(&asset.url, 35),
+                time_color
+            );
+        }
+    }
+
+    // Largest assets
+    if !assets.largest.is_empty() && assets.largest[0].size > 102400 {
+        println!("    {}", "Largest:".dimmed());
+        for asset in assets.largest.iter().take(3) {
+            let size_str = format_asset_size(asset.size);
+            let size_color = if asset.size > 512000 {
+                size_str.red()
+            } else if asset.size > 102400 {
+                size_str.yellow()
+            } else {
+                size_str.normal()
+            };
+            println!(
+                "      {} {} [{}]",
+                "·".dimmed(),
+                truncate(&asset.url, 35),
+                size_color
+            );
+        }
+    }
+
+    // Uncached count
+    if assets.uncached_count > 0 {
+        let uncached_color = if assets.uncached_count > assets.total_assets / 2 {
+            format!("{} uncached", assets.uncached_count).yellow()
+        } else {
+            format!("{} uncached", assets.uncached_count).dimmed()
+        };
+        println!("    {} {}", "Caching:".dimmed(), uncached_color);
+    }
+
+    println!();
+
+    // Issues
+    print_issues(
+        &assets
+            .issues
+            .iter()
+            .map(|i| (i.severity, &i.message))
+            .collect::<Vec<_>>(),
+    );
+}
+
+/// Format asset size for display
+fn format_asset_size(bytes: u64) -> String {
+    if bytes >= 1_048_576 {
+        format!("{:.1} MB", bytes as f64 / 1_048_576.0)
+    } else if bytes >= 1024 {
+        format!("{:.1} KB", bytes as f64 / 1024.0)
+    } else {
+        format!("{} B", bytes)
+    }
+}
+
 /// Format duration in seconds to human readable
 fn format_duration(seconds: u64) -> String {
     if seconds >= 31536000 {
@@ -1161,6 +1360,22 @@ pub fn print_compact(result: &ProbeResult) -> String {
         parts.push(format!("cache={}", cache_abbr));
     }
 
+    if let Some(ref topology) = result.topology {
+        parts.push(format!("urls={}", topology.total_internal_urls));
+        if !topology.broken_links.is_empty() {
+            parts.push(format!("broken={}", topology.broken_links.len()));
+        }
+    }
+
+    if let Some(ref assets) = result.assets {
+        parts.push(format!("assets={}", assets.total_assets));
+        parts.push(format!("size={}", assets.total_size_formatted));
+        if assets.slowest.first().map(|a| a.load_time_ms > 500).unwrap_or(false) {
+            let slow_count = assets.assets.iter().filter(|a| a.load_time_ms > 500).count();
+            parts.push(format!("slow={}", slow_count));
+        }
+    }
+
     // Count all issues
     let mut issue_counts = std::collections::HashMap::new();
     if let Some(ref tls) = result.tls {
@@ -1205,6 +1420,16 @@ pub fn print_compact(result: &ProbeResult) -> String {
     }
     if let Some(ref content) = result.content {
         for issue in &content.issues {
+            *issue_counts.entry(issue.severity).or_insert(0) += 1;
+        }
+    }
+    if let Some(ref topology) = result.topology {
+        for issue in &topology.issues {
+            *issue_counts.entry(issue.severity).or_insert(0) += 1;
+        }
+    }
+    if let Some(ref assets) = result.assets {
+        for issue in &assets.issues {
             *issue_counts.entry(issue.severity).or_insert(0) += 1;
         }
     }

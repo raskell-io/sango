@@ -1,0 +1,62 @@
+[package]
+name = "sango-web"
+version = "0.1.0"
+edition = "2021"
+description = "Sango edge diagnostics - WebAssembly build for browsers"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# WASM bindings
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+
+# Browser APIs
+web-sys = { version = "0.3.70", features = [
+    "console",
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "Headers",
+    "Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",
+    "Performance",
+    "PerformanceEntry",
+    "PerformanceResourceTiming",
+] }
+js-sys = "0.3"
+
+# Utilities
+gloo-net = "0.6"
+gloo-timers = { version = "0.3", features = ["futures"] }
+gloo-utils = "0.2"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde-wasm-bindgen = "0.6"
+
+# HTML parsing
+scraper = "0.22"
+
+# URL parsing
+url = "2.5"
+
+# Error handling
+thiserror = "2.0"
+console_error_panic_hook = "0.1"
+
+# Async
+futures = "0.3"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true

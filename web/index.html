@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sango - Edge Diagnostics</title>
+    <meta name="description" content="Browser-based edge diagnostics for web endpoints. Analyze SEO, AEO, security headers, and performance.">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border-color: #30363d;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-blue: #58a6ff;
+            --accent-purple: #a371f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-blue);
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            background: var(--accent-blue);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.visible {
+            display: block;
+        }
+
+        .health-banner {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .health-banner.healthy {
+            background: rgba(63, 185, 80, 0.15);
+            border: 1px solid var(--accent-green);
+        }
+
+        .health-banner.degraded {
+            background: rgba(210, 153, 34, 0.15);
+            border: 1px solid var(--accent-yellow);
+        }
+
+        .health-banner.unhealthy {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid var(--accent-red);
+        }
+
+        .health-icon {
+            font-size: 1.5rem;
+        }
+
+        .health-text h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .health-text p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h3 .icon {
+            font-size: 1.25rem;
+        }
+
+        .score {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .score.good {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--accent-green);
+        }
+
+        .score.ok {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .score.bad {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--accent-red);
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+        }
+
+        .metric-value {
+            font-weight: 500;
+        }
+
+        .metric-value.success {
+            color: var(--accent-green);
+        }
+
+        .metric-value.warning {
+            color: var(--accent-yellow);
+        }
+
+        .metric-value.error {
+            color: var(--accent-red);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            margin: 0.2rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .issues-section {
+            margin-top: 1.5rem;
+        }
+
+        .issue {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .issue-icon {
+            flex-shrink: 0;
+            width: 20px;
+            text-align: center;
+        }
+
+        .issue.critical .issue-icon,
+        .issue.high .issue-icon {
+            color: var(--accent-red);
+        }
+
+        .issue.medium .issue-icon {
+            color: var(--accent-yellow);
+        }
+
+        .issue.low .issue-icon {
+            color: var(--text-muted);
+        }
+
+        .issue-text {
+            font-size: 0.9rem;
+        }
+
+        .issue-category {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-left: auto;
+        }
+
+        .limitations {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .limitations h4 {
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .limitations ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .limitations li {
+            padding: 0.25rem 0;
+        }
+
+        .limitations li::before {
+            content: "ℹ️";
+            margin-right: 0.5rem;
+        }
+
+        .error-message {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            input[type="text"] {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Sango</h1>
+            <p class="subtitle">Browser-based edge diagnostics for web endpoints</p>
+        </header>
+
+        <div class="input-section">
+            <input type="text" id="target" placeholder="Enter URL (e.g., example.com)" autocomplete="url">
+            <button id="scan-btn" onclick="runProbe()">Analyze</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <span class="spinner"></span>
+            Analyzing endpoint...
+        </div>
+
+        <div id="error" class="error-message" style="display: none;"></div>
+
+        <div id="results" class="results">
+            <!-- Health Banner -->
+            <div id="health-banner" class="health-banner">
+                <span class="health-icon">✓</span>
+                <div class="health-text">
+                    <h2 id="health-status">Healthy</h2>
+                    <p id="health-target"></p>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Timing Card -->
+                <div class="card" id="timing-card">
+                    <h3><span class="icon">⏱️</span> Latency Breakdown</h3>
+                    <div id="timing-metrics"></div>
+                </div>
+
+                <!-- Headers Card -->
+                <div class="card">
+                    <h3><span class="icon">🛡️</span> Security Headers</h3>
+                    <div id="headers-metrics"></div>
+                </div>
+
+                <!-- Content Card -->
+                <div class="card">
+                    <h3><span class="icon">📄</span> Content</h3>
+                    <div id="content-metrics"></div>
+                </div>
+
+                <!-- SEO Card -->
+                <div class="card">
+                    <h3>
+                        <span class="icon">📊</span> SEO
+                        <span id="seo-score" class="score"></span>
+                    </h3>
+                    <div id="seo-metrics"></div>
+                </div>
+
+                <!-- AEO Card -->
+                <div class="card">
+                    <h3>
+                        <span class="icon">🤖</span> AEO
+                        <span id="aeo-score" class="score"></span>
+                    </h3>
+                    <div id="aeo-metrics"></div>
+                </div>
+
+                <!-- Tech Stack Card -->
+                <div class="card">
+                    <h3><span class="icon">⚙️</span> Tech Stack</h3>
+                    <div id="techstack-metrics"></div>
+                </div>
+            </div>
+
+            <!-- Issues -->
+            <div class="issues-section" id="issues-section">
+                <div class="card">
+                    <h3><span class="icon">⚠️</span> Issues Found</h3>
+                    <div id="issues-list"></div>
+                </div>
+            </div>
+
+            <!-- Limitations -->
+            <div class="limitations">
+                <h4>Browser Limitations</h4>
+                <ul id="limitations-list"></ul>
+            </div>
+        </div>
+
+        <footer>
+            <p>
+                Powered by <a href="https://github.com/raskell-io/sango" target="_blank">Sango</a> •
+                WebAssembly build
+            </p>
+        </footer>
+    </div>
+
+    <script type="module">
+        import init, { probe_json } from './pkg/sango_web.js';
+
+        let wasmReady = false;
+
+        async function initWasm() {
+            try {
+                await init();
+                wasmReady = true;
+                console.log('Sango WASM initialized');
+            } catch (e) {
+                console.error('Failed to initialize WASM:', e);
+                document.getElementById('error').textContent = 'Failed to load WebAssembly module: ' + e.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        initWasm();
+
+        window.runProbe = async function() {
+            const target = document.getElementById('target').value.trim();
+            if (!target) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            if (!wasmReady) {
+                alert('WASM module not ready yet');
+                return;
+            }
+
+            const btn = document.getElementById('scan-btn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const results = document.getElementById('results');
+
+            btn.disabled = true;
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            results.classList.remove('visible');
+
+            try {
+                const json = await probe_json(target);
+                const result = JSON.parse(json);
+                displayResults(result);
+            } catch (e) {
+                error.textContent = 'Analysis failed: ' + e.message;
+                error.style.display = 'block';
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        };
+
+        function displayResults(result) {
+            const results = document.getElementById('results');
+
+            // Health banner
+            const banner = document.getElementById('health-banner');
+            banner.className = 'health-banner ' + result.health.toLowerCase();
+            document.getElementById('health-status').textContent = result.health;
+            document.getElementById('health-target').textContent = `${result.target} • ${result.timestamp}`;
+
+            const healthIcon = document.querySelector('.health-icon');
+            if (result.health === 'Healthy') {
+                healthIcon.textContent = '✓';
+            } else if (result.health === 'Degraded') {
+                healthIcon.textContent = '⚠';
+            } else {
+                healthIcon.textContent = '✗';
+            }
+
+            // Timing
+            const timingCard = document.getElementById('timing-card');
+            const timingMetrics = document.getElementById('timing-metrics');
+            if (result.timing && result.timing.available) {
+                timingMetrics.innerHTML = `
+                    <div class="metric"><span class="metric-label">DNS</span><span class="metric-value">${result.timing.dns_ms}ms</span></div>
+                    <div class="metric"><span class="metric-label">TCP</span><span class="metric-value">${result.timing.tcp_ms}ms</span></div>
+                    <div class="metric"><span class="metric-label">TLS</span><span class="metric-value">${result.timing.tls_ms}ms</span></div>
+                    <div class="metric"><span class="metric-label">TTFB</span><span class="metric-value">${result.timing.ttfb_ms}ms</span></div>
+                    <div class="metric"><span class="metric-label">Total</span><span class="metric-value" style="font-weight:700">${result.timing.total_ms}ms</span></div>
+                `;
+                timingCard.style.display = 'block';
+            } else {
+                timingMetrics.innerHTML = '<p style="color:var(--text-muted)">Timing not available (cross-origin)</p>';
+            }
+
+            // Headers
+            const headersMetrics = document.getElementById('headers-metrics');
+            headersMetrics.innerHTML = `
+                <div class="metric"><span class="metric-label">HSTS</span><span class="metric-value ${result.headers.has_hsts ? 'success' : 'error'}">${result.headers.has_hsts ? 'Present' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">CSP</span><span class="metric-value ${result.headers.has_csp ? 'success' : 'warning'}">${result.headers.has_csp ? 'Present' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">X-Frame-Options</span><span class="metric-value ${result.headers.has_xfo ? 'success' : ''}">${result.headers.has_xfo ? 'Present' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">X-Content-Type-Options</span><span class="metric-value ${result.headers.has_xcto ? 'success' : ''}">${result.headers.has_xcto ? 'Present' : 'Missing'}</span></div>
+                ${result.headers.server ? `<div class="metric"><span class="metric-label">Server</span><span class="metric-value">${result.headers.server}</span></div>` : ''}
+            `;
+
+            // Content
+            const contentMetrics = document.getElementById('content-metrics');
+            contentMetrics.innerHTML = `
+                <div class="metric"><span class="metric-label">Size</span><span class="metric-value">${result.content.size_formatted}</span></div>
+                <div class="metric"><span class="metric-label">Type</span><span class="metric-value">${result.content.mime_type || 'Unknown'}</span></div>
+                ${result.content.charset ? `<div class="metric"><span class="metric-label">Charset</span><span class="metric-value">${result.content.charset}</span></div>` : ''}
+            `;
+
+            // SEO
+            const seoScore = document.getElementById('seo-score');
+            seoScore.textContent = result.seo.score + '/100';
+            seoScore.className = 'score ' + (result.seo.score >= 80 ? 'good' : result.seo.score >= 60 ? 'ok' : 'bad');
+
+            const seoMetrics = document.getElementById('seo-metrics');
+            seoMetrics.innerHTML = `
+                <div class="metric"><span class="metric-label">Title</span><span class="metric-value">${result.seo.title ? truncate(result.seo.title, 40) : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">Description</span><span class="metric-value">${result.seo.description_length ? result.seo.description_length + ' chars' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">Canonical</span><span class="metric-value ${result.seo.canonical ? 'success' : ''}">${result.seo.canonical ? 'Present' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">Open Graph</span><span class="metric-value ${result.seo.has_open_graph ? 'success' : ''}">${result.seo.has_open_graph ? 'Present' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">H1 Count</span><span class="metric-value ${result.seo.h1_count === 1 ? 'success' : result.seo.h1_count > 1 ? 'warning' : 'error'}">${result.seo.h1_count}</span></div>
+                <div class="metric"><span class="metric-label">Structured Data</span><span class="metric-value ${result.seo.has_structured_data ? 'success' : ''}">${result.seo.has_structured_data ? 'Present' : 'Missing'}</span></div>
+            `;
+
+            // AEO
+            const aeoScore = document.getElementById('aeo-score');
+            aeoScore.textContent = result.aeo.score + '/100 • ' + result.aeo.readiness;
+            aeoScore.className = 'score ' + (result.aeo.score >= 80 ? 'good' : result.aeo.score >= 60 ? 'ok' : 'bad');
+
+            const aeoMetrics = document.getElementById('aeo-metrics');
+            aeoMetrics.innerHTML = `
+                <div class="metric"><span class="metric-label">JSON-LD Blocks</span><span class="metric-value ${result.aeo.json_ld_count > 0 ? 'success' : ''}">${result.aeo.json_ld_count}</span></div>
+                ${result.aeo.schema_types.length > 0 ? `<div class="metric"><span class="metric-label">Schema Types</span><span class="metric-value">${result.aeo.schema_types.map(t => `<span class="tag">${t}</span>`).join('')}</span></div>` : ''}
+                <div class="metric"><span class="metric-label">Text Ratio</span><span class="metric-value">${(result.aeo.text_ratio * 100).toFixed(1)}%</span></div>
+                <div class="metric"><span class="metric-label">Semantic Score</span><span class="metric-value">${result.aeo.semantic_score}%</span></div>
+                <div class="metric"><span class="metric-label">Word Count</span><span class="metric-value">${result.aeo.word_count}</span></div>
+            `;
+
+            // Tech Stack
+            const techMetrics = document.getElementById('techstack-metrics');
+            let techHtml = '';
+            if (result.techstack.server) techHtml += `<div class="metric"><span class="metric-label">Server</span><span class="metric-value">${result.techstack.server}</span></div>`;
+            if (result.techstack.cdn) techHtml += `<div class="metric"><span class="metric-label">CDN</span><span class="metric-value">${result.techstack.cdn}</span></div>`;
+            if (result.techstack.frameworks.length > 0) techHtml += `<div class="metric"><span class="metric-label">Frameworks</span><span class="metric-value">${result.techstack.frameworks.map(f => `<span class="tag">${f}</span>`).join('')}</span></div>`;
+            if (result.techstack.cms) techHtml += `<div class="metric"><span class="metric-label">CMS</span><span class="metric-value">${result.techstack.cms}</span></div>`;
+            if (result.techstack.js_libraries.length > 0) techHtml += `<div class="metric"><span class="metric-label">Libraries</span><span class="metric-value">${result.techstack.js_libraries.join(', ')}</span></div>`;
+            if (result.techstack.analytics.length > 0) techHtml += `<div class="metric"><span class="metric-label">Analytics</span><span class="metric-value">${result.techstack.analytics.join(', ')}</span></div>`;
+            techMetrics.innerHTML = techHtml || '<p style="color:var(--text-muted)">No tech stack detected</p>';
+
+            // Issues
+            const issuesSection = document.getElementById('issues-section');
+            const issuesList = document.getElementById('issues-list');
+            if (result.issues.length > 0) {
+                issuesSection.style.display = 'block';
+                issuesList.innerHTML = result.issues.map(issue => `
+                    <div class="issue ${issue.severity}">
+                        <span class="issue-icon">${issue.severity === 'high' || issue.severity === 'critical' ? '✗' : issue.severity === 'medium' ? '!' : '•'}</span>
+                        <span class="issue-text">${issue.message}</span>
+                        <span class="issue-category">${issue.category}</span>
+                    </div>
+                `).join('');
+            } else {
+                issuesSection.style.display = 'none';
+            }
+
+            // Limitations
+            const limitationsList = document.getElementById('limitations-list');
+            limitationsList.innerHTML = result.limitations.map(l => `<li>${l}</li>`).join('');
+
+            results.classList.add('visible');
+        }
+
+        function truncate(str, len) {
+            return str.length > len ? str.slice(0, len) + '...' : str;
+        }
+
+        // Allow Enter key to trigger analysis
+        document.getElementById('target').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                window.runProbe();
+            }
+        });
+    </script>
+</body>
+</html>

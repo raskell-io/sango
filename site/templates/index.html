@@ -1255,10 +1255,16 @@
             html += renderRow('Analytics', tech.analytics.join(', '));
         }
 
-        // Issues
+        // Issues (sorted by severity)
         if (result.issues && result.issues.length > 0) {
             html += '<div class="demo-section-header">Issues Found</div>';
-            result.issues.forEach(issue => {
+            const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+            const sortedIssues = [...result.issues].sort((a, b) => {
+                const aOrder = severityOrder[a.severity.toLowerCase()] ?? 5;
+                const bOrder = severityOrder[b.severity.toLowerCase()] ?? 5;
+                return aOrder - bOrder;
+            });
+            sortedIssues.forEach(issue => {
                 const severity = issue.severity.toLowerCase();
                 html += `<div class="demo-issue demo-issue--${severity}">
                     <strong>${issue.severity}:</strong> ${issue.message}

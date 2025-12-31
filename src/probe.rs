@@ -6,7 +6,7 @@ use anyhow::Result;
 use serde::Serialize;
 use std::time::Duration;
 
-use crate::checks::{aeo, discovery, headers, http, latency, seo, techstack, tls};
+use crate::checks::{aeo, content, discovery, headers, http, latency, seo, techstack, tls};
 
 /// Result of all diagnostic probes
 #[derive(Debug, Serialize)]
@@ -31,6 +31,8 @@ pub struct ProbeResult {
     pub seo: Option<seo::SeoResult>,
     /// AEO results
     pub aeo: Option<aeo::AeoResult>,
+    /// Content analysis results
+    pub content: Option<content::ContentResult>,
     /// Overall health assessment
     pub overall_health: Health,
     /// Error messages from failed checks
@@ -79,6 +81,8 @@ pub struct ProbeConfig {
     pub skip_seo: bool,
     /// Skip AEO checks
     pub skip_aeo: bool,
+    /// Skip content analysis
+    pub skip_content: bool,
     /// Connection timeout
     pub timeout: Duration,
 }
@@ -94,6 +98,7 @@ impl Default for ProbeConfig {
             skip_techstack: false,
             skip_seo: false,
             skip_aeo: false,
+            skip_content: false,
             timeout: Duration::from_secs(10),
         }
     }
@@ -113,6 +118,7 @@ pub async fn run_probe(target: &str, config: ProbeConfig) -> Result<ProbeResult>
         techstack: None,
         seo: None,
         aeo: None,
+        content: None,
         overall_health: Health::Unknown,
         errors: Vec::new(),
     };
@@ -216,6 +222,18 @@ pub async fn run_probe(target: &str, config: ProbeConfig) -> Result<ProbeResult>
         }
     }
 
+    // Run content analysis
+    if !config.skip_content {
+        match content::check_content(target, config.timeout).await {
+            Ok(content_result) => {
+                result.content = Some(content_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("Content: {}", e));
+            }
+        }
+    }
+
     // Calculate overall health based on results
     result.overall_health = calculate_health(&result);
 
@@ -308,6 +326,17 @@ fn calculate_health(result: &ProbeResult) -> Health {
     // Check AEO issues
     if let Some(ref aeo_result) = result.aeo {
         for issue in &aeo_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check content issues
+    if let Some(ref content_result) = result.content {
+        for issue in &content_result.issues {
             match issue.severity {
                 tls::Severity::Critical => has_critical = true,
                 tls::Severity::High => has_high = true,

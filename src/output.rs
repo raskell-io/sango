@@ -87,6 +87,11 @@ pub fn print_pretty(result: &ProbeResult) {
         print_aeo_section(aeo);
     }
 
+    // Content results
+    if let Some(ref content) = result.content {
+        print_content_section(content);
+    }
+
     // Footer
     println!("{}", "─".repeat(60).dimmed());
 }
@@ -863,6 +868,158 @@ fn print_aeo_section(aeo: &crate::checks::aeo::AeoResult) {
     );
 }
 
+fn print_content_section(content: &crate::checks::content::ContentResult) {
+    println!("{}", "  Content".bold().underline());
+    println!();
+
+    // Content-Type
+    match &content.content_type.mime_type {
+        Some(mime) => {
+            let match_status = if content.content_type.types_match {
+                "".to_string()
+            } else {
+                format!(" (sniffed: {})", content.content_type.sniffed_type.as_deref().unwrap_or("?")).yellow().to_string()
+            };
+            println!(
+                "    {} {}{}",
+                "Type:".dimmed(),
+                mime,
+                match_status
+            );
+        }
+        None => {
+            println!("    {} {}", "Type:".dimmed(), "not specified".red());
+        }
+    }
+
+    // Size
+    let size_color = match content.size.size_category.as_str() {
+        "tiny" | "small" => content.size.body_size_formatted.green(),
+        "medium" => content.size.body_size_formatted.normal(),
+        "large" => content.size.body_size_formatted.yellow(),
+        "huge" => content.size.body_size_formatted.red(),
+        _ => content.size.body_size_formatted.normal(),
+    };
+    println!("    {} {} ({})", "Size:".dimmed(), size_color, content.size.size_category);
+
+    // Compression
+    if content.compression.is_compressed {
+        println!(
+            "    {} {} ({})",
+            "Compression:".dimmed(),
+            "enabled".green(),
+            content.compression.algorithm.as_deref().unwrap_or("unknown")
+        );
+    } else if content.compression.should_compress {
+        println!(
+            "    {} {}",
+            "Compression:".dimmed(),
+            "not enabled (recommended)".yellow()
+        );
+    } else {
+        println!(
+            "    {} {}",
+            "Compression:".dimmed(),
+            "not applicable".dimmed()
+        );
+    }
+
+    // Cache
+    let cache_rating_str = match content.cache.rating {
+        crate::checks::content::CacheRating::Excellent => "excellent".green(),
+        crate::checks::content::CacheRating::Good => "good".green(),
+        crate::checks::content::CacheRating::Basic => "basic".yellow(),
+        crate::checks::content::CacheRating::Poor => "poor".red(),
+        crate::checks::content::CacheRating::NotCached => "disabled".dimmed(),
+    };
+    print!("    {} {}", "Cache:".dimmed(), cache_rating_str);
+
+    if let Some(max_age) = content.cache.effective_max_age {
+        print!(" (max-age={})", format_duration(max_age));
+    }
+    if content.cache.directives.immutable {
+        print!(" {}", "immutable".cyan());
+    }
+    println!();
+
+    // CDN cache status
+    if let Some(ref status) = content.cache.cdn_cache_status {
+        let status_color = if status.to_uppercase().contains("HIT") {
+            status.green()
+        } else if status.to_uppercase().contains("MISS") {
+            status.yellow()
+        } else {
+            status.normal()
+        };
+        println!("    {} {}", "CDN:".dimmed(), status_color);
+    }
+
+    // Cache validators
+    if content.cache.etag.is_some() || content.cache.last_modified.is_some() {
+        let mut validators = Vec::new();
+        if content.cache.etag.is_some() {
+            validators.push("ETag");
+        }
+        if content.cache.last_modified.is_some() {
+            validators.push("Last-Modified");
+        }
+        println!("    {} {}", "Validators:".dimmed(), validators.join(", "));
+    }
+
+    // Encoding
+    if let Some(ref charset) = content.encoding.header_charset {
+        let consistency = if content.encoding.is_consistent {
+            "".to_string()
+        } else {
+            " (inconsistent)".yellow().to_string()
+        };
+        println!("    {} {}{}", "Charset:".dimmed(), charset, consistency);
+    }
+
+    // Resource hints
+    if content.resource_hints.total_count > 0 {
+        let mut hints = Vec::new();
+        if !content.resource_hints.preload.is_empty() {
+            hints.push(format!("{} preload", content.resource_hints.preload.len()));
+        }
+        if !content.resource_hints.prefetch.is_empty() {
+            hints.push(format!("{} prefetch", content.resource_hints.prefetch.len()));
+        }
+        if !content.resource_hints.preconnect.is_empty() {
+            hints.push(format!("{} preconnect", content.resource_hints.preconnect.len()));
+        }
+        if !content.resource_hints.dns_prefetch.is_empty() {
+            hints.push(format!("{} dns-prefetch", content.resource_hints.dns_prefetch.len()));
+        }
+        println!("    {} {}", "Hints:".dimmed(), hints.join(", ").green());
+    }
+
+    println!();
+
+    // Issues
+    print_issues(
+        &content.issues
+            .iter()
+            .map(|i| (i.severity, &i.message))
+            .collect::<Vec<_>>(),
+    );
+}
+
+/// Format duration in seconds to human readable
+fn format_duration(seconds: u64) -> String {
+    if seconds >= 31536000 {
+        format!("{}y", seconds / 31536000)
+    } else if seconds >= 86400 {
+        format!("{}d", seconds / 86400)
+    } else if seconds >= 3600 {
+        format!("{}h", seconds / 3600)
+    } else if seconds >= 60 {
+        format!("{}m", seconds / 60)
+    } else {
+        format!("{}s", seconds)
+    }
+}
+
 /// Truncate a string for display
 fn truncate_str(s: &str, max_len: usize) -> String {
     if s.len() > max_len {
@@ -990,6 +1147,20 @@ pub fn print_compact(result: &ProbeResult) -> String {
         parts.push(format!("aeo={}", aeo.score));
     }
 
+    if let Some(ref content) = result.content {
+        if content.compression.is_compressed {
+            parts.push(format!("comp={}", content.compression.algorithm.as_deref().unwrap_or("yes")));
+        }
+        let cache_abbr = match content.cache.rating {
+            crate::checks::content::CacheRating::Excellent => "A",
+            crate::checks::content::CacheRating::Good => "B",
+            crate::checks::content::CacheRating::Basic => "C",
+            crate::checks::content::CacheRating::Poor => "D",
+            crate::checks::content::CacheRating::NotCached => "-",
+        };
+        parts.push(format!("cache={}", cache_abbr));
+    }
+
     // Count all issues
     let mut issue_counts = std::collections::HashMap::new();
     if let Some(ref tls) = result.tls {
@@ -1029,6 +1200,11 @@ pub fn print_compact(result: &ProbeResult) -> String {
     }
     if let Some(ref aeo) = result.aeo {
         for issue in &aeo.issues {
+            *issue_counts.entry(issue.severity).or_insert(0) += 1;
+        }
+    }
+    if let Some(ref content) = result.content {
+        for issue in &content.issues {
             *issue_counts.entry(issue.severity).or_insert(0) += 1;
         }
     }

@@ -52,6 +52,10 @@ clap = { version = "4.5", features = ["derive", "env", "color"] }
 colored = "2.1"
 tabled = "0.16"
 
+# Interactive TUI
+ratatui = "0.29"
+crossterm = "0.28"
+
 # Timing
 chrono = { version = "0.4", features = ["serde"] }
 

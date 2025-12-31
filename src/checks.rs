@@ -8,3 +8,4 @@ pub mod discovery;
 pub mod techstack;
 pub mod seo;
 pub mod aeo;
+pub mod content;

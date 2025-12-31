@@ -51,6 +51,22 @@ struct Args {
     #[arg(long, help = "Skip DNS, TCP, TLS, TTFB latency measurements")]
     skip_latency: bool,
 
+    /// Skip discovery checks
+    #[arg(long, help = "Skip robots.txt, sitemap, and path discovery")]
+    skip_discovery: bool,
+
+    /// Skip tech stack detection
+    #[arg(long, help = "Skip server, CDN, framework, and CMS detection")]
+    skip_techstack: bool,
+
+    /// Skip SEO checks
+    #[arg(long, help = "Skip meta tags, Open Graph, and SEO analysis")]
+    skip_seo: bool,
+
+    /// Skip AEO checks
+    #[arg(long, help = "Skip AI readiness and structured data analysis")]
+    skip_aeo: bool,
+
     /// Connection timeout in seconds
     #[arg(short, long, default_value = "10", value_name = "SECONDS")]
     timeout: u64,
@@ -95,6 +111,10 @@ async fn main() -> Result<()> {
         skip_http: args.skip_http,
         skip_headers: args.skip_headers,
         skip_latency: args.skip_latency,
+        skip_discovery: args.skip_discovery,
+        skip_techstack: args.skip_techstack,
+        skip_seo: args.skip_seo,
+        skip_aeo: args.skip_aeo,
         timeout: Duration::from_secs(args.timeout),
     };
 

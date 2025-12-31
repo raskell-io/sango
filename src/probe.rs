@@ -6,7 +6,7 @@ use anyhow::Result;
 use serde::Serialize;
 use std::time::Duration;
 
-use crate::checks::{headers, http, latency, tls};
+use crate::checks::{aeo, discovery, headers, http, latency, seo, techstack, tls};
 
 /// Result of all diagnostic probes
 #[derive(Debug, Serialize)]
@@ -23,6 +23,14 @@ pub struct ProbeResult {
     pub headers: Option<headers::HeadersResult>,
     /// Latency breakdown results
     pub latency: Option<latency::LatencyResult>,
+    /// Discovery results
+    pub discovery: Option<discovery::DiscoveryResult>,
+    /// Tech stack results
+    pub techstack: Option<techstack::TechStackResult>,
+    /// SEO results
+    pub seo: Option<seo::SeoResult>,
+    /// AEO results
+    pub aeo: Option<aeo::AeoResult>,
     /// Overall health assessment
     pub overall_health: Health,
     /// Error messages from failed checks
@@ -63,6 +71,14 @@ pub struct ProbeConfig {
     pub skip_headers: bool,
     /// Skip latency checks
     pub skip_latency: bool,
+    /// Skip discovery checks
+    pub skip_discovery: bool,
+    /// Skip tech stack detection
+    pub skip_techstack: bool,
+    /// Skip SEO checks
+    pub skip_seo: bool,
+    /// Skip AEO checks
+    pub skip_aeo: bool,
     /// Connection timeout
     pub timeout: Duration,
 }
@@ -74,6 +90,10 @@ impl Default for ProbeConfig {
             skip_http: false,
             skip_headers: false,
             skip_latency: false,
+            skip_discovery: false,
+            skip_techstack: false,
+            skip_seo: false,
+            skip_aeo: false,
             timeout: Duration::from_secs(10),
         }
     }
@@ -89,6 +109,10 @@ pub async fn run_probe(target: &str, config: ProbeConfig) -> Result<ProbeResult>
         http: None,
         headers: None,
         latency: None,
+        discovery: None,
+        techstack: None,
+        seo: None,
+        aeo: None,
         overall_health: Health::Unknown,
         errors: Vec::new(),
     };
@@ -144,6 +168,54 @@ pub async fn run_probe(target: &str, config: ProbeConfig) -> Result<ProbeResult>
         }
     }
 
+    // Run discovery check
+    if !config.skip_discovery {
+        match discovery::check_discovery(target, config.timeout).await {
+            Ok(discovery_result) => {
+                result.discovery = Some(discovery_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("Discovery: {}", e));
+            }
+        }
+    }
+
+    // Run tech stack detection
+    if !config.skip_techstack {
+        match techstack::check_techstack(target, config.timeout).await {
+            Ok(techstack_result) => {
+                result.techstack = Some(techstack_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("TechStack: {}", e));
+            }
+        }
+    }
+
+    // Run SEO checks
+    if !config.skip_seo {
+        match seo::check_seo(target, config.timeout).await {
+            Ok(seo_result) => {
+                result.seo = Some(seo_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("SEO: {}", e));
+            }
+        }
+    }
+
+    // Run AEO checks
+    if !config.skip_aeo {
+        match aeo::check_aeo(target, config.timeout).await {
+            Ok(aeo_result) => {
+                result.aeo = Some(aeo_result);
+            }
+            Err(e) => {
+                result.errors.push(format!("AEO: {}", e));
+            }
+        }
+    }
+
     // Calculate overall health based on results
     result.overall_health = calculate_health(&result);
 
@@ -192,6 +264,50 @@ fn calculate_health(result: &ProbeResult) -> Health {
     // Check latency issues
     if let Some(ref latency_result) = result.latency {
         for issue in &latency_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check discovery issues
+    if let Some(ref discovery_result) = result.discovery {
+        for issue in &discovery_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check tech stack issues
+    if let Some(ref techstack_result) = result.techstack {
+        for issue in &techstack_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check SEO issues
+    if let Some(ref seo_result) = result.seo {
+        for issue in &seo_result.issues {
+            match issue.severity {
+                tls::Severity::Critical => has_critical = true,
+                tls::Severity::High => has_high = true,
+                tls::Severity::Medium | tls::Severity::Low => has_medium_or_low = true,
+            }
+        }
+    }
+
+    // Check AEO issues
+    if let Some(ref aeo_result) = result.aeo {
+        for issue in &aeo_result.issues {
             match issue.severity {
                 tls::Severity::Critical => has_critical = true,
                 tls::Severity::High => has_high = true,

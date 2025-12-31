@@ -18,6 +18,9 @@ author = "Raskell"
 author_type = "Organization"
 keywords = "edge diagnostics, TLS, HTTP, security headers, SEO, AEO, CLI tool"
 
+# Logo in navbar
+logo = "sango-icon.png"
+
 # Favicon
 favicon = "favicon.svg"
 

@@ -1,11 +1,21 @@
-[package]
-name = "sango"
+[workspace]
+members = ["crates/sango-core", "web"]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
-authors = ["Raskell Contributors"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/raskell-io/sango"
+
+[package]
+name = "sango"
+version.workspace = true
+edition.workspace = true
+rust-version = "1.75"
+authors = ["Raskell Contributors"]
+license.workspace = true
+repository.workspace = true
 homepage = "https://raskell.io"
 documentation = "https://github.com/raskell-io/sango"
 description = "Operator-grade edge diagnostics CLI - TLS, HTTP/3, security headers, WAF signals, and latency analysis"
@@ -18,6 +28,8 @@ name = "sango"
 path = "src/main.rs"
 
 [dependencies]
+# Workspace crates
+sango-core = { path = "crates/sango-core" }
 # Async runtime
 tokio = { version = "1.40", features = ["full"] }
 futures = "0.3"

@@ -1,14 +1,17 @@
 [package]
 name = "sango-web"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 description = "Sango edge diagnostics - WebAssembly build for browsers"
-license = "MIT OR Apache-2.0"
+license.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+# Workspace crates
+sango-core = { path = "../crates/sango-core" }
+
 # WASM bindings
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
@@ -41,9 +44,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde-wasm-bindgen = "0.6"
 
-# HTML parsing
-scraper = "0.22"
-
 # URL parsing
 url = "2.5"
 
@@ -60,3 +60,6 @@ wasm-bindgen-test = "0.3"
 [profile.release]
 opt-level = "s"
 lto = true
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

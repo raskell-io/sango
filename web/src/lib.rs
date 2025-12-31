@@ -1,22 +1,26 @@
 //! Sango Web - Browser-based edge diagnostics via WebAssembly
 //!
-//! A WASM build of Sango that runs entirely in the browser using the Fetch API
-//! and Performance API for timing measurements.
+//! Uses sango-core for shared analysis logic, with browser-specific
+//! HTTP fetching via the Fetch API and timing via Performance API.
 
+use sango_core::{
+    aeo::{analyze_aeo, AeoAnalysis, AeoConfig},
+    content::{analyze_content, ContentAnalysis, ContentInfo},
+    headers::{analyze_headers, HeadersAnalysis, RawHeaders},
+    seo::{analyze_seo, SeoAnalysis, SeoConfig},
+    techstack::{analyze_techstack, TechStackAnalysis, TechStackHeaders},
+    Issue, Severity,
+};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 
-mod analysis;
 mod timing;
-
-pub use analysis::*;
 pub use timing::*;
 
 /// Result of a browser-based probe
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[wasm_bindgen(getter_with_clone)]
 pub struct ProbeResult {
     /// Target URL that was probed
     pub target: String,
@@ -28,16 +32,16 @@ pub struct ProbeResult {
     pub status_code: u16,
     /// Timing breakdown
     pub timing: Option<TimingResult>,
-    /// Response headers
-    pub headers: HeadersResult,
+    /// Response headers analysis
+    pub headers: HeadersAnalysis,
     /// Content analysis
-    pub content: ContentResult,
+    pub content: ContentAnalysis,
     /// SEO analysis
-    pub seo: SeoResult,
+    pub seo: SeoAnalysis,
     /// AEO analysis
-    pub aeo: AeoResult,
+    pub aeo: AeoAnalysis,
     /// Tech stack detection
-    pub techstack: TechStackResult,
+    pub techstack: TechStackAnalysis,
     /// Issues found
     pub issues: Vec<Issue>,
     /// Limitations (what couldn't be checked in browser)
@@ -46,7 +50,6 @@ pub struct ProbeResult {
 
 /// Timing breakdown from Performance API
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[wasm_bindgen(getter_with_clone)]
 pub struct TimingResult {
     /// DNS lookup time in ms
     pub dns_ms: f64,
@@ -62,132 +65,9 @@ pub struct TimingResult {
     pub available: bool,
 }
 
-/// HTTP headers analysis
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[wasm_bindgen(getter_with_clone)]
-pub struct HeadersResult {
-    /// Content-Type header
-    pub content_type: Option<String>,
-    /// Content-Length header
-    pub content_length: Option<String>,
-    /// Server header
-    pub server: Option<String>,
-    /// Cache-Control header
-    pub cache_control: Option<String>,
-    /// HSTS header present
-    pub has_hsts: bool,
-    /// CSP header present
-    pub has_csp: bool,
-    /// X-Frame-Options present
-    pub has_xfo: bool,
-    /// X-Content-Type-Options present
-    pub has_xcto: bool,
-    /// All headers as JSON string
-    pub all_headers: String,
-}
-
-/// Content analysis
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[wasm_bindgen(getter_with_clone)]
-pub struct ContentResult {
-    /// Response size in bytes
-    pub size_bytes: usize,
-    /// Human-readable size
-    pub size_formatted: String,
-    /// Detected MIME type
-    pub mime_type: Option<String>,
-    /// Character encoding
-    pub charset: Option<String>,
-    /// Whether compression is used
-    pub is_compressed: bool,
-    /// Compression algorithm
-    pub compression: Option<String>,
-}
-
-/// SEO analysis
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[wasm_bindgen(getter_with_clone)]
-pub struct SeoResult {
-    /// SEO score 0-100
-    pub score: u8,
-    /// Page title
-    pub title: Option<String>,
-    /// Title length
-    pub title_length: usize,
-    /// Meta description
-    pub description: Option<String>,
-    /// Description length
-    pub description_length: usize,
-    /// Canonical URL
-    pub canonical: Option<String>,
-    /// Has Open Graph tags
-    pub has_open_graph: bool,
-    /// Has Twitter Card tags
-    pub has_twitter_card: bool,
-    /// H1 count
-    pub h1_count: usize,
-    /// Has structured data (JSON-LD)
-    pub has_structured_data: bool,
-    /// Language
-    pub language: Option<String>,
-}
-
-/// AEO (AI Engine Optimization) analysis
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[wasm_bindgen(getter_with_clone)]
-pub struct AeoResult {
-    /// AEO score 0-100
-    pub score: u8,
-    /// Readiness level
-    pub readiness: String,
-    /// JSON-LD block count
-    pub json_ld_count: usize,
-    /// Schema.org types found
-    pub schema_types: Vec<String>,
-    /// Has llms.txt
-    pub has_llms_txt: bool,
-    /// Text-to-HTML ratio percentage
-    pub text_ratio: f32,
-    /// Semantic HTML score
-    pub semantic_score: u8,
-    /// Word count
-    pub word_count: usize,
-}
-
-/// Tech stack detection
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[wasm_bindgen(getter_with_clone)]
-pub struct TechStackResult {
-    /// Detected server
-    pub server: Option<String>,
-    /// Detected CDN
-    pub cdn: Option<String>,
-    /// Detected frameworks
-    pub frameworks: Vec<String>,
-    /// Detected CMS
-    pub cms: Option<String>,
-    /// Detected JavaScript libraries
-    pub js_libraries: Vec<String>,
-    /// Detected analytics
-    pub analytics: Vec<String>,
-}
-
-/// An issue found during analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[wasm_bindgen(getter_with_clone)]
-pub struct Issue {
-    /// Severity: critical, high, medium, low
-    pub severity: String,
-    /// Category of the issue
-    pub category: String,
-    /// Issue message
-    pub message: String,
-}
-
 /// Initialize the WASM module
 #[wasm_bindgen(start)]
 pub fn init() {
-    // Set up panic hook for better error messages
     console_error_panic_hook::set_once();
 }
 
@@ -234,6 +114,10 @@ async fn run_probe(target: &str) -> Result<ProbeResult, String> {
 
     let status_code = response.status();
 
+    // Extract headers
+    let raw_headers = extract_raw_headers(&response);
+    let tech_headers = extract_tech_headers(&response);
+
     // Get response body
     let body_promise = response.text()
         .map_err(|e| format!("Failed to get response text: {:?}", e))?;
@@ -244,27 +128,35 @@ async fn run_probe(target: &str) -> Result<ProbeResult, String> {
     // Get timing information
     let timing = timing::get_resource_timing(&url).await;
 
-    // Analyze headers
-    let headers = analysis::analyze_headers(&response);
+    // Use sango-core analysis functions
+    let headers = analyze_headers(&raw_headers);
 
-    // Analyze content
-    let content = analysis::analyze_content(&body, &headers);
+    let content_info = ContentInfo {
+        content_type: headers.content_type.clone(),
+        content_encoding: None, // Browser decompresses automatically
+        content_length: None,
+        body_size: body.len() as u64,
+    };
+    let content = analyze_content(content_info);
 
-    // Analyze SEO
-    let seo = analysis::analyze_seo(&body);
+    let seo_config = SeoConfig {
+        x_robots_tag: raw_headers.get("x-robots-tag").cloned(),
+        content_language: raw_headers.get("content-language").cloned(),
+    };
+    let seo = analyze_seo(&body, &url, seo_config);
 
-    // Analyze AEO
-    let aeo = analysis::analyze_aeo(&body);
+    let aeo_config = AeoConfig {
+        has_llms_txt: false, // Can't check in browser due to CORS
+    };
+    let aeo = analyze_aeo(&body, aeo_config);
 
-    // Detect tech stack
-    let techstack = analysis::analyze_techstack(&body, &headers);
+    let techstack = analyze_techstack(&body, tech_headers);
 
-    // Generate issues
-    let mut issues = Vec::new();
-    issues.extend(analysis::generate_header_issues(&headers));
-    issues.extend(analysis::generate_seo_issues(&seo));
-    issues.extend(analysis::generate_aeo_issues(&aeo));
-    issues.extend(analysis::generate_content_issues(&content));
+    // Collect all issues
+    let mut issues: Vec<Issue> = Vec::new();
+    issues.extend(headers.issues.clone());
+    issues.extend(seo.issues.clone());
+    issues.extend(aeo.issues.clone());
 
     // Calculate health
     let health = calculate_health(&issues);
@@ -274,6 +166,7 @@ async fn run_probe(target: &str) -> Result<ProbeResult, String> {
         "TLS certificate details not accessible in browser".to_string(),
         "HTTP/2 vs HTTP/3 protocol not detectable".to_string(),
         "Cross-origin requests may be blocked by CORS".to_string(),
+        "llms.txt check skipped due to CORS".to_string(),
     ];
 
     Ok(ProbeResult {
@@ -292,6 +185,50 @@ async fn run_probe(target: &str) -> Result<ProbeResult, String> {
     })
 }
 
+/// Extract raw headers from response for analysis
+fn extract_raw_headers(response: &Response) -> RawHeaders {
+    let mut raw = RawHeaders::new();
+    let headers = response.headers();
+
+    // Check common headers (can't iterate in web-sys)
+    let header_names = [
+        "content-type", "content-length", "server", "cache-control",
+        "strict-transport-security", "content-security-policy",
+        "content-security-policy-report-only",
+        "x-frame-options", "x-content-type-options", "x-xss-protection",
+        "referrer-policy", "permissions-policy", "feature-policy",
+        "content-encoding", "x-robots-tag", "content-language",
+        "x-powered-by",
+    ];
+
+    for name in header_names {
+        if let Ok(Some(value)) = headers.get(name) {
+            raw.insert(name, value);
+        }
+    }
+
+    raw
+}
+
+/// Extract tech-related headers for techstack analysis
+fn extract_tech_headers(response: &Response) -> TechStackHeaders {
+    let headers = response.headers();
+
+    let get = |name: &str| -> Option<String> {
+        headers.get(name).ok().flatten()
+    };
+
+    TechStackHeaders {
+        server: get("server"),
+        x_powered_by: get("x-powered-by"),
+        via: get("via"),
+        cf_ray: get("cf-ray"),
+        x_vercel_id: get("x-vercel-id"),
+        x_amz_cf_id: get("x-amz-cf-id"),
+        x_cache: get("x-cache"),
+    }
+}
+
 /// Normalize URL to ensure it has a scheme
 fn normalize_url(target: &str) -> String {
     if target.starts_with("http://") || target.starts_with("https://") {
@@ -303,9 +240,9 @@ fn normalize_url(target: &str) -> String {
 
 /// Calculate overall health from issues
 fn calculate_health(issues: &[Issue]) -> String {
-    let has_critical = issues.iter().any(|i| i.severity == "critical");
-    let has_high = issues.iter().any(|i| i.severity == "high");
-    let has_medium = issues.iter().any(|i| i.severity == "medium");
+    let has_critical = issues.iter().any(|i| i.severity == Severity::Critical);
+    let has_high = issues.iter().any(|i| i.severity == Severity::High);
+    let has_medium = issues.iter().any(|i| i.severity == Severity::Medium);
 
     if has_critical || has_high {
         "Unhealthy".to_string()
@@ -316,5 +253,4 @@ fn calculate_health(issues: &[Issue]) -> String {
     }
 }
 
-// Re-export console_error_panic_hook
 pub use console_error_panic_hook;

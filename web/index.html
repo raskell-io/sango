@@ -591,19 +591,26 @@
                 ${result.content.charset ? `<div class="metric"><span class="metric-label">Charset</span><span class="metric-value">${result.content.charset}</span></div>` : ''}
             `;
 
-            // SEO
+            // SEO (using sango-core structure)
             const seoScore = document.getElementById('seo-score');
             seoScore.textContent = result.seo.score + '/100';
             seoScore.className = 'score ' + (result.seo.score >= 80 ? 'good' : result.seo.score >= 60 ? 'ok' : 'bad');
 
+            const seoTitle = result.seo.title ? result.seo.title.content : null;
+            const seoDescLength = result.seo.description ? result.seo.description.length : 0;
+            const seoCanonical = result.seo.canonical ? result.seo.canonical.url : null;
+            const seoH1Count = result.seo.headings ? result.seo.headings.h1_count : 0;
+            const seoHasOG = result.seo.open_graph ? result.seo.open_graph.is_complete : false;
+            const seoHasSD = result.seo.structured_data ? result.seo.structured_data.has_json_ld : false;
+
             const seoMetrics = document.getElementById('seo-metrics');
             seoMetrics.innerHTML = `
-                <div class="metric"><span class="metric-label">Title</span><span class="metric-value">${result.seo.title ? truncate(result.seo.title, 40) : 'Missing'}</span></div>
-                <div class="metric"><span class="metric-label">Description</span><span class="metric-value">${result.seo.description_length ? result.seo.description_length + ' chars' : 'Missing'}</span></div>
-                <div class="metric"><span class="metric-label">Canonical</span><span class="metric-value ${result.seo.canonical ? 'success' : ''}">${result.seo.canonical ? 'Present' : 'Missing'}</span></div>
-                <div class="metric"><span class="metric-label">Open Graph</span><span class="metric-value ${result.seo.has_open_graph ? 'success' : ''}">${result.seo.has_open_graph ? 'Present' : 'Missing'}</span></div>
-                <div class="metric"><span class="metric-label">H1 Count</span><span class="metric-value ${result.seo.h1_count === 1 ? 'success' : result.seo.h1_count > 1 ? 'warning' : 'error'}">${result.seo.h1_count}</span></div>
-                <div class="metric"><span class="metric-label">Structured Data</span><span class="metric-value ${result.seo.has_structured_data ? 'success' : ''}">${result.seo.has_structured_data ? 'Present' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">Title</span><span class="metric-value">${seoTitle ? truncate(seoTitle, 40) : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">Description</span><span class="metric-value">${seoDescLength ? seoDescLength + ' chars' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">Canonical</span><span class="metric-value ${seoCanonical ? 'success' : ''}">${seoCanonical ? 'Present' : 'Missing'}</span></div>
+                <div class="metric"><span class="metric-label">Open Graph</span><span class="metric-value ${seoHasOG ? 'success' : ''}">${seoHasOG ? 'Complete' : 'Incomplete'}</span></div>
+                <div class="metric"><span class="metric-label">H1 Count</span><span class="metric-value ${seoH1Count === 1 ? 'success' : seoH1Count > 1 ? 'warning' : 'error'}">${seoH1Count}</span></div>
+                <div class="metric"><span class="metric-label">Structured Data</span><span class="metric-value ${seoHasSD ? 'success' : ''}">${seoHasSD ? 'Present' : 'Missing'}</span></div>
             `;
 
             // AEO

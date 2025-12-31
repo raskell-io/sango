@@ -1,10 +1,206 @@
 {% extends "base.html" %}
 
-{% block title %}{{ config.title }}{% endblock %}
+{% block title %}{{ config.title }} - Edge Diagnostics CLI{% endblock %}
 
 {% block head %}
+<!-- Skip Link for Accessibility -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Additional SEO Meta Tags -->
+<meta name="application-name" content="Sango">
+<meta name="theme-color" content="#cba6f7">
+<meta name="apple-mobile-web-app-title" content="Sango">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- JSON-LD Structured Data for AEO -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Sango",
+    "alternateName": "Sango CLI",
+    "description": "{{ config.description }}",
+    "url": "{{ config.base_url | safe }}",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": ["macOS", "Linux", "Windows"],
+    "softwareVersion": "0.1.0",
+    "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+    },
+    "author": {
+        "@type": "Organization",
+        "name": "Raskell",
+        "url": "https://raskell.io"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "Raskell",
+        "url": "https://raskell.io",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ get_url(path='assets/sango-icon.png') | safe }}"
+        }
+    },
+    "screenshot": "{{ get_url(path='og-image.png') | safe }}",
+    "featureList": [
+        "TLS certificate inspection and validation",
+        "HTTP/1.1, HTTP/2, HTTP/3 protocol detection",
+        "Security headers analysis (HSTS, CSP, COOP/COEP)",
+        "Latency breakdown (DNS, TCP, TLS, TTFB)",
+        "SEO analysis (meta tags, Open Graph, canonical URLs)",
+        "AEO readiness (Schema.org, JSON-LD, semantic HTML)",
+        "Tech stack detection (frameworks, CDNs, CMS)",
+        "Content intelligence and compression analysis"
+    ],
+    "downloadUrl": "https://github.com/raskell-io/sango/releases",
+    "installUrl": "https://getsango.raskell.io",
+    "releaseNotes": "https://github.com/raskell-io/sango/releases",
+    "softwareHelp": {
+        "@type": "WebPage",
+        "url": "https://github.com/raskell-io/sango#readme"
+    },
+    "sameAs": [
+        "https://github.com/raskell-io/sango"
+    ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Sango",
+    "url": "{{ config.base_url | safe }}",
+    "description": "{{ config.description }}",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Raskell",
+        "url": "https://raskell.io"
+    },
+    "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ config.base_url | safe }}#demo?url={search_term_string}",
+        "query-input": "required name=search_term_string"
+    }
+}
+</script>
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Raskell",
+    "url": "https://raskell.io",
+    "logo": "{{ get_url(path='assets/sango-icon.png') | safe }}",
+    "sameAs": [
+        "https://github.com/raskell-io"
+    ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "{{ config.base_url | safe }}"
+        }
+    ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "What is Sango?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sango is an operator-grade edge diagnostics CLI tool that analyzes web endpoints for TLS configuration, HTTP protocols, security headers, latency, SEO/AEO readiness, and tech stack detection - all in a single command."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How do I install Sango?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Install Sango by running: curl -fsSL getsango.raskell.io | sh. You can also download binaries directly from GitHub Releases."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What does Sango check?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sango performs comprehensive endpoint analysis including TLS certificate inspection, HTTP/2/3 protocol detection, security headers (HSTS, CSP, COOP/COEP), latency breakdown (DNS, TCP, TLS, TTFB), SEO analysis, AEO readiness scoring, and technology stack detection."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Is Sango free to use?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, Sango is completely free and open-source, licensed under Apache 2.0."
+            }
+        }
+    ]
+}
+</script>
 <style>
 /* Custom styles for sango landing page */
+
+/* ============================================
+   Skip Link for Accessibility
+   ============================================ */
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ctp-mauve);
+    color: var(--ctp-base);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0 0 8px 8px;
+    font-weight: 600;
+    z-index: 9999;
+    text-decoration: none;
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid var(--ctp-text);
+    outline-offset: 2px;
+}
+
+/* Visually hidden but accessible to screen readers */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus styles for better keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--ctp-mauve);
+    outline-offset: 2px;
+}
 
 /* ============================================
    Header / Navbar - Sentinel Glassmorphic Style
@@ -826,51 +1022,77 @@
 {% endblock %}
 
 {% block content %}
+<main id="main-content" role="main" aria-label="Main content">
+
 <!-- Demo Section - Primary Hero -->
-<section class="demo-hero" id="demo">
+<section class="demo-hero" id="demo" aria-labelledby="demo-heading">
+    <h1 id="demo-heading" class="visually-hidden">Sango - Edge Diagnostics Demo</h1>
     <p class="demo-hero__subtitle">Edge diagnostics for the modern web. Enter a URL to analyze.</p>
 
     <div class="demo-container">
-        <div class="demo-input-group">
-            <input type="text" id="demo-url" class="demo-input" placeholder="https://example.com" value="https://www.raskell.io">
-            <button id="demo-run" class="demo-button">Run Probe</button>
-        </div>
+        <form class="demo-input-group" role="search" aria-label="URL analysis form" onsubmit="return false;">
+            <label for="demo-url" class="visually-hidden">Enter URL to analyze</label>
+            <input
+                type="url"
+                id="demo-url"
+                class="demo-input"
+                placeholder="https://example.com"
+                value="https://www.raskell.io"
+                aria-describedby="demo-url-hint"
+                autocomplete="url"
+                spellcheck="false"
+            >
+            <span id="demo-url-hint" class="visually-hidden">Enter a website URL to run edge diagnostics including TLS, security headers, SEO, and AEO analysis</span>
+            <button id="demo-run" class="demo-button" type="button" aria-label="Run diagnostic probe on the entered URL">Run Probe</button>
+        </form>
 
-        <div class="demo-output" id="demo-output"></div>
+        <div
+            class="demo-output"
+            id="demo-output"
+            role="region"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-label="Diagnostic results"
+        ></div>
     </div>
 </section>
 
 <!-- Install Section -->
-<section class="install-section" id="install">
-    <h2 class="install-section__title">Install</h2>
+<section class="install-section" id="install" aria-labelledby="install-heading">
+    <h2 id="install-heading" class="install-section__title">Install</h2>
     <div class="install-container">
-        <div class="install-code">
-            <button class="install-copy-btn" onclick="copyInstallCommand()" title="Copy to clipboard">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="install-code" role="region" aria-label="Installation command">
+            <button
+                class="install-copy-btn"
+                onclick="copyInstallCommand()"
+                aria-label="Copy installation command to clipboard"
+                title="Copy to clipboard"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
                     <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
                 </svg>
             </button>
-            <code><span class="install-code__cmd">curl -fsSL getsango.raskell.io | sh</span></code>
+            <code aria-label="Installation command: curl -fsSL getsango.raskell.io | sh"><span class="install-code__cmd">curl -fsSL getsango.raskell.io | sh</span></code>
         </div>
         <p class="install-alternatives">
-            Or download directly from <a href="https://github.com/raskell-io/sango/releases">GitHub Releases</a>
+            Or download directly from <a href="https://github.com/raskell-io/sango/releases" rel="noopener" aria-label="Download from GitHub Releases">GitHub Releases</a>
         </p>
     </div>
 </section>
 
 <!-- Usage Section -->
-<section class="usage-section" id="usage">
-    <h2 class="usage-section__title">Usage</h2>
-    <div class="usage-container">
-        <div class="usage-example" onclick="toggleUsageExample(this)">
-            <div class="usage-example__header">
+<section class="usage-section" id="usage" aria-labelledby="usage-heading">
+    <h2 id="usage-heading" class="usage-section__title">Usage</h2>
+    <div class="usage-container" role="list" aria-label="Command examples">
+        <article class="usage-example" role="listitem" onclick="toggleUsageExample(this)">
+            <div class="usage-example__header" role="button" tabindex="0" aria-expanded="false" aria-controls="usage-output-1" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUsageExample(this.parentElement);}">
                 <div class="usage-example__content">
-                    <div class="usage-example__comment"># Full endpoint assessment</div>
-                    <div class="usage-example__cmd">sango https://example.com</div>
+                    <div class="usage-example__comment" aria-hidden="true"># Full endpoint assessment</div>
+                    <div class="usage-example__cmd"><code>sango https://example.com</code></div>
                 </div>
-                <button class="usage-example__toggle" aria-label="Toggle output">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="usage-example__toggle" aria-label="Toggle command output" tabindex="-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <polyline points="6 9 12 15 18 9"/>
                     </svg>
                 </button>
@@ -991,11 +1213,11 @@
 </section>
 
 <!-- Features Section -->
-<section class="features-section" id="features">
-    <h2 class="features-section__title">What Sango Checks</h2>
-    <div class="feature-grid--sango">
-        <div class="feature-card">
-            <div class="feature-card__icon">
+<section class="features-section" id="features" aria-labelledby="features-heading">
+    <h2 id="features-heading" class="features-section__title">What Sango Checks</h2>
+    <div class="feature-grid--sango" role="list" aria-label="Sango diagnostic features">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -1003,10 +1225,10 @@
             </div>
             <h3 class="feature-card__title">TLS Inspection</h3>
             <p class="feature-card__description">Certificate chain validation, expiry warnings, cipher analysis, and ALPN negotiation. Know exactly what's securing your connection.</p>
-        </div>
+        </article>
 
-        <div class="feature-card">
-            <div class="feature-card__icon">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
                     <path d="m9 12 2 2 4-4"/>
@@ -1014,10 +1236,10 @@
             </div>
             <h3 class="feature-card__title">Security Headers</h3>
             <p class="feature-card__description">HSTS, CSP, X-Frame-Options, COOP/COEP analysis. Get actionable recommendations for hardening your security posture.</p>
-        </div>
+        </article>
 
-        <div class="feature-card">
-            <div class="feature-card__icon">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 11a9 9 0 0 1 9 9"/>
                     <path d="M4 4a16 16 0 0 1 16 16"/>
@@ -1026,10 +1248,10 @@
             </div>
             <h3 class="feature-card__title">Protocol Detection</h3>
             <p class="feature-card__description">HTTP/1.1, HTTP/2, and HTTP/3 support detection. Understand your protocol stack and optimization opportunities.</p>
-        </div>
+        </article>
 
-        <div class="feature-card">
-            <div class="feature-card__icon">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
@@ -1037,10 +1259,10 @@
             </div>
             <h3 class="feature-card__title">Latency Breakdown</h3>
             <p class="feature-card__description">DNS, TCP, TLS handshake, and TTFB timing. Pinpoint exactly where your connection is slow.</p>
-        </div>
+        </article>
 
-        <div class="feature-card">
-            <div class="feature-card__icon">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"/>
                     <path d="m21 21-4.3-4.3"/>
@@ -1048,10 +1270,10 @@
             </div>
             <h3 class="feature-card__title">SEO Analysis</h3>
             <p class="feature-card__description">Title, meta description, Open Graph, canonical URLs, heading structure. Ensure search engines understand your content.</p>
-        </div>
+        </article>
 
-        <div class="feature-card">
-            <div class="feature-card__icon">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 8V4H8"/>
                     <rect width="16" height="12" x="4" y="8" rx="2"/>
@@ -1063,10 +1285,10 @@
             </div>
             <h3 class="feature-card__title">AEO Readiness</h3>
             <p class="feature-card__description">Schema.org markup, JSON-LD extraction, semantic HTML scoring. Prepare your content for AI agents and LLMs.</p>
-        </div>
+        </article>
 
-        <div class="feature-card">
-            <div class="feature-card__icon">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                     <circle cx="12" cy="12" r="4"/>
@@ -1074,10 +1296,10 @@
             </div>
             <h3 class="feature-card__title">Tech Stack Detection</h3>
             <p class="feature-card__description">Identify frameworks, CDNs, CMS platforms, and analytics. Understand what powers any website.</p>
-        </div>
+        </article>
 
-        <div class="feature-card">
-            <div class="feature-card__icon">
+        <article class="feature-card" role="listitem">
+            <div class="feature-card__icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
                     <polyline points="14 2 14 8 20 8"/>
@@ -1087,10 +1309,11 @@
             </div>
             <h3 class="feature-card__title">Content Intelligence</h3>
             <p class="feature-card__description">Content-type detection, compression analysis, response sizes. Know exactly what's being served.</p>
-        </div>
+        </article>
     </div>
 </section>
 
+</main>
 {% endblock %}
 
 {% block footer %}

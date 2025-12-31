@@ -1,0 +1,62 @@
+# Sango - Edge Diagnostics Landing Page
+base_url = "https://sango.raskell.io"
+title = "Sango"
+description = "Operator-grade edge diagnostics - TLS, HTTP/3, security headers, and content intelligence in a single command"
+theme = "tanuki"
+compile_sass = true
+build_search_index = false
+generate_feeds = false
+
+[markdown]
+highlight_code = true
+highlight_theme = "base16-ocean-dark"
+
+[extra]
+mode = "site"
+show_theme_toggle = true
+author = "Raskell"
+author_type = "Organization"
+keywords = "edge diagnostics, TLS, HTTP, security headers, SEO, AEO, CLI tool"
+
+# Favicon
+favicon = "favicon.svg"
+
+# Social/OG
+og_image = "og-image.png"
+og_image_width = 1200
+og_image_height = 630
+og_image_alt = "Sango - Edge Diagnostics CLI"
+
+# Hero section
+[extra.hero]
+title = "sango"
+subtitle = "Edge diagnostics for the modern web"
+tagline = "TLS inspection, security headers, SEO/AEO analysis, and content intelligence - all in a single command."
+[extra.hero.cta]
+text = "Install"
+url = "#install"
+[extra.hero.secondary_cta]
+text = "Try in Browser"
+url = "#demo"
+
+# Social links
+[extra.social]
+github = "https://github.com/raskell-io/sango"
+
+# Navigation
+[[extra.nav]]
+name = "Features"
+url = "#features"
+
+[[extra.nav]]
+name = "Demo"
+url = "#demo"
+
+[[extra.nav]]
+name = "Install"
+url = "#install"
+
+[[extra.nav]]
+name = "GitHub"
+url = "https://github.com/raskell-io/sango"
+external = true

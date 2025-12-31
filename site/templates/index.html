@@ -1,0 +1,807 @@
+{% extends "base.html" %}
+
+{% block title %}{{ config.title }}{% endblock %}
+
+{% block head %}
+<style>
+/* Custom styles for sango landing page */
+.hero--sango {
+    padding: 6rem 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, var(--ctp-crust) 0%, var(--ctp-mantle) 100%);
+}
+
+.hero__title--sango {
+    font-family: var(--font-mono);
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 700;
+    color: var(--ctp-mauve);
+    margin-bottom: 1rem;
+}
+
+.hero__subtitle--sango {
+    font-size: 1.5rem;
+    color: var(--ctp-subtext0);
+    margin-bottom: 0.5rem;
+}
+
+.hero__tagline--sango {
+    font-size: 1.1rem;
+    color: var(--ctp-overlay1);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+.hero__actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Feature grid */
+.features-section {
+    padding: 4rem 2rem;
+    background: var(--ctp-base);
+}
+
+.features-section__title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 3rem;
+    color: var(--ctp-text);
+}
+
+.feature-grid--sango {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    padding: 1.5rem;
+    background: var(--ctp-surface0);
+    border-radius: 12px;
+    border: 1px solid var(--ctp-surface1);
+}
+
+.feature-card__icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 1rem;
+    color: var(--ctp-mauve);
+}
+
+.feature-card__title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--ctp-text);
+}
+
+.feature-card__description {
+    font-size: 0.95rem;
+    color: var(--ctp-subtext0);
+    line-height: 1.6;
+}
+
+/* Demo section */
+.demo-section {
+    padding: 4rem 2rem;
+    background: var(--ctp-mantle);
+}
+
+.demo-section__title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--ctp-text);
+}
+
+.demo-section__subtitle {
+    text-align: center;
+    color: var(--ctp-subtext0);
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.demo-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.demo-input-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.demo-input {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    background: var(--ctp-surface0);
+    border: 2px solid var(--ctp-surface1);
+    border-radius: 8px;
+    color: var(--ctp-text);
+    transition: border-color 0.2s;
+}
+
+.demo-input:focus {
+    outline: none;
+    border-color: var(--ctp-mauve);
+}
+
+.demo-input::placeholder {
+    color: var(--ctp-overlay0);
+}
+
+.demo-button {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: var(--ctp-mauve);
+    color: var(--ctp-base);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.demo-button:hover {
+    opacity: 0.9;
+}
+
+.demo-button:active {
+    transform: scale(0.98);
+}
+
+.demo-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.demo-output {
+    background: var(--ctp-crust);
+    border-radius: 12px;
+    padding: 1.5rem;
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.demo-placeholder {
+    color: var(--ctp-overlay0);
+    text-align: center;
+    padding: 4rem 2rem;
+    font-style: italic;
+}
+
+.demo-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--ctp-mauve);
+    padding: 4rem 2rem;
+}
+
+.demo-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--ctp-surface1);
+    border-top-color: var(--ctp-mauve);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.demo-results {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.demo-section-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ctp-mauve);
+    margin: 1.5rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--ctp-surface1);
+}
+
+.demo-section-header:first-child {
+    margin-top: 0;
+}
+
+.demo-row {
+    display: flex;
+    padding: 0.375rem 0;
+}
+
+.demo-label {
+    color: var(--ctp-subtext0);
+    min-width: 160px;
+}
+
+.demo-value {
+    color: var(--ctp-text);
+}
+
+.demo-value--good {
+    color: var(--ctp-green);
+}
+
+.demo-value--warning {
+    color: var(--ctp-yellow);
+}
+
+.demo-value--bad {
+    color: var(--ctp-red);
+}
+
+.demo-issue {
+    padding: 0.5rem 0.75rem;
+    margin: 0.25rem 0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.demo-issue--critical,
+.demo-issue--high {
+    background: color-mix(in srgb, var(--ctp-red) 15%, transparent);
+    border-left: 3px solid var(--ctp-red);
+}
+
+.demo-issue--medium {
+    background: color-mix(in srgb, var(--ctp-yellow) 15%, transparent);
+    border-left: 3px solid var(--ctp-yellow);
+}
+
+.demo-issue--low,
+.demo-issue--info {
+    background: color-mix(in srgb, var(--ctp-blue) 15%, transparent);
+    border-left: 3px solid var(--ctp-blue);
+}
+
+.demo-limitations {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--ctp-surface0);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--ctp-subtext0);
+}
+
+.demo-limitations__title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--ctp-overlay2);
+}
+
+/* Install section */
+.install-section {
+    padding: 4rem 2rem;
+    background: var(--ctp-base);
+}
+
+.install-section__title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--ctp-text);
+}
+
+.install-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.install-code {
+    background: var(--ctp-crust);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.install-code code {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--ctp-text);
+    display: block;
+    word-break: break-all;
+}
+
+.install-code__comment {
+    color: var(--ctp-overlay0);
+}
+
+.install-code__cmd {
+    color: var(--ctp-mauve);
+}
+
+.install-copy-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem;
+    background: var(--ctp-surface0);
+    border: 1px solid var(--ctp-surface1);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--ctp-text);
+    transition: background 0.2s;
+}
+
+.install-copy-btn:hover {
+    background: var(--ctp-surface1);
+}
+
+.install-alternatives {
+    text-align: center;
+    color: var(--ctp-subtext0);
+    font-size: 0.95rem;
+}
+
+.install-alternatives a {
+    color: var(--ctp-mauve);
+    text-decoration: none;
+}
+
+.install-alternatives a:hover {
+    text-decoration: underline;
+}
+
+/* Usage section */
+.usage-section {
+    padding: 4rem 2rem;
+    background: var(--ctp-mantle);
+}
+
+.usage-section__title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--ctp-text);
+}
+
+.usage-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.usage-example {
+    background: var(--ctp-crust);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.usage-example__comment {
+    color: var(--ctp-overlay0);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.usage-example__cmd {
+    color: var(--ctp-green);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+}
+
+/* Footer CTA */
+.footer-cta {
+    padding: 4rem 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, var(--ctp-crust) 0%, var(--ctp-mantle) 100%);
+}
+
+.footer-cta__title {
+    font-size: 1.75rem;
+    color: var(--ctp-text);
+    margin-bottom: 1rem;
+}
+
+.footer-cta__description {
+    color: var(--ctp-subtext0);
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .demo-input-group {
+        flex-direction: column;
+    }
+
+    .demo-row {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .demo-label {
+        min-width: auto;
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero hero--sango" id="top">
+    <h1 class="hero__title--sango">sango</h1>
+    <p class="hero__subtitle--sango">{{ config.extra.hero.subtitle }}</p>
+    <p class="hero__tagline--sango">{{ config.extra.hero.tagline }}</p>
+    <div class="hero__actions">
+        <a href="{{ config.extra.hero.cta.url }}" class="btn btn--primary btn--lg">{{ config.extra.hero.cta.text }}</a>
+        <a href="{{ config.extra.hero.secondary_cta.url }}" class="btn btn--secondary btn--lg">{{ config.extra.hero.secondary_cta.text }}</a>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section" id="features">
+    <h2 class="features-section__title">What Sango Checks</h2>
+    <div class="feature-grid--sango">
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <h3 class="feature-card__title">TLS Inspection</h3>
+            <p class="feature-card__description">Certificate chain validation, expiry warnings, cipher analysis, and ALPN negotiation. Know exactly what's securing your connection.</p>
+        </div>
+
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                <path d="m9 12 2 2 4-4"/>
+            </svg>
+            <h3 class="feature-card__title">Security Headers</h3>
+            <p class="feature-card__description">HSTS, CSP, X-Frame-Options, COOP/COEP analysis. Get actionable recommendations for hardening your security posture.</p>
+        </div>
+
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 11a9 9 0 0 1 9 9"/>
+                <path d="M4 4a16 16 0 0 1 16 16"/>
+                <circle cx="5" cy="19" r="1"/>
+            </svg>
+            <h3 class="feature-card__title">Protocol Detection</h3>
+            <p class="feature-card__description">HTTP/1.1, HTTP/2, and HTTP/3 support detection. Understand your protocol stack and optimization opportunities.</p>
+        </div>
+
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <h3 class="feature-card__title">Latency Breakdown</h3>
+            <p class="feature-card__description">DNS, TCP, TLS handshake, and TTFB timing. Pinpoint exactly where your connection is slow.</p>
+        </div>
+
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+            </svg>
+            <h3 class="feature-card__title">SEO Analysis</h3>
+            <p class="feature-card__description">Title, meta description, Open Graph, canonical URLs, heading structure. Ensure search engines understand your content.</p>
+        </div>
+
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8"/>
+                <rect width="16" height="12" x="4" y="8" rx="2"/>
+                <path d="M2 14h2"/>
+                <path d="M20 14h2"/>
+                <path d="M15 13v2"/>
+                <path d="M9 13v2"/>
+            </svg>
+            <h3 class="feature-card__title">AEO Readiness</h3>
+            <p class="feature-card__description">Schema.org markup, JSON-LD extraction, semantic HTML scoring. Prepare your content for AI agents and LLMs.</p>
+        </div>
+
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <circle cx="12" cy="12" r="4"/>
+            </svg>
+            <h3 class="feature-card__title">Tech Stack Detection</h3>
+            <p class="feature-card__description">Identify frameworks, CDNs, CMS platforms, and analytics. Understand what powers any website.</p>
+        </div>
+
+        <div class="feature-card">
+            <svg class="feature-card__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <path d="M12 18v-6"/>
+                <path d="m9 15 3 3 3-3"/>
+            </svg>
+            <h3 class="feature-card__title">Content Intelligence</h3>
+            <p class="feature-card__description">Content-type detection, compression analysis, response sizes. Know exactly what's being served.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Section -->
+<section class="demo-section" id="demo">
+    <h2 class="demo-section__title">Try It in Your Browser</h2>
+    <p class="demo-section__subtitle">Run a probe against any URL using Sango's WebAssembly build. Note: browser limitations apply (CORS, no TLS inspection).</p>
+
+    <div class="demo-container">
+        <div class="demo-input-group">
+            <input type="text" id="demo-url" class="demo-input" placeholder="https://example.com" value="https://example.com">
+            <button id="demo-run" class="demo-button">Run Probe</button>
+        </div>
+
+        <div class="demo-output" id="demo-output">
+            <div class="demo-placeholder">Enter a URL and click "Run Probe" to analyze an endpoint.</div>
+        </div>
+    </div>
+</section>
+
+<!-- Install Section -->
+<section class="install-section" id="install">
+    <h2 class="install-section__title">Install</h2>
+    <div class="install-container">
+        <div class="install-code">
+            <button class="install-copy-btn" onclick="copyInstallCommand()" title="Copy to clipboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+            </button>
+            <code><span class="install-code__comment"># Install the latest version</span>
+<span class="install-code__cmd">curl -fsSL https://raw.githubusercontent.com/raskell-io/sango/main/install.sh | sh</span></code>
+        </div>
+        <p class="install-alternatives">
+            Or download directly from <a href="https://github.com/raskell-io/sango/releases">GitHub Releases</a>
+        </p>
+    </div>
+</section>
+
+<!-- Usage Section -->
+<section class="usage-section" id="usage">
+    <h2 class="usage-section__title">Usage</h2>
+    <div class="usage-container">
+        <div class="usage-example">
+            <div class="usage-example__comment"># Full endpoint assessment</div>
+            <div class="usage-example__cmd">sango https://example.com</div>
+        </div>
+        <div class="usage-example">
+            <div class="usage-example__comment"># JSON output for CI/CD pipelines</div>
+            <div class="usage-example__cmd">sango https://example.com -f json</div>
+        </div>
+        <div class="usage-example">
+            <div class="usage-example__comment"># Only check specific modules</div>
+            <div class="usage-example__cmd">sango https://example.com --only tls,headers,seo</div>
+        </div>
+        <div class="usage-example">
+            <div class="usage-example__comment"># Skip expensive checks</div>
+            <div class="usage-example__cmd">sango https://example.com --skip topology,assets</div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer CTA -->
+<section class="footer-cta">
+    <h2 class="footer-cta__title">Ready to diagnose your endpoints?</h2>
+    <p class="footer-cta__description">Sango is free, open source, and built for operators who need answers fast.</p>
+    <div class="hero__actions">
+        <a href="#install" class="btn btn--primary btn--lg">Install Now</a>
+        <a href="https://github.com/raskell-io/sango" class="btn btn--secondary btn--lg" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script type="module">
+    import init, { probe_json } from '/wasm/sango_web.js';
+
+    let wasmReady = false;
+
+    async function initWasm() {
+        try {
+            await init({ module_or_path: '/wasm/sango_web_bg.wasm' });
+            wasmReady = true;
+            console.log('Sango WASM initialized');
+        } catch (e) {
+            console.error('Failed to initialize WASM:', e);
+            document.getElementById('demo-output').innerHTML =
+                '<div class="demo-placeholder" style="color: var(--ctp-red);">Failed to load WebAssembly module. Please try refreshing the page.</div>';
+        }
+    }
+
+    initWasm();
+
+    document.getElementById('demo-run').addEventListener('click', runProbe);
+    document.getElementById('demo-url').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') runProbe();
+    });
+
+    async function runProbe() {
+        if (!wasmReady) {
+            alert('WebAssembly module is still loading. Please wait...');
+            return;
+        }
+
+        const urlInput = document.getElementById('demo-url');
+        const output = document.getElementById('demo-output');
+        const button = document.getElementById('demo-run');
+
+        let url = urlInput.value.trim();
+        if (!url) {
+            alert('Please enter a URL');
+            return;
+        }
+
+        // Add https:// if no protocol
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+            urlInput.value = url;
+        }
+
+        output.innerHTML = '<div class="demo-loading"><div class="demo-spinner"></div>Probing endpoint...</div>';
+        button.disabled = true;
+
+        try {
+            const jsonResult = await probe_json(url);
+            const result = JSON.parse(jsonResult);
+            renderResults(result);
+        } catch (e) {
+            output.innerHTML = `<div class="demo-placeholder" style="color: var(--ctp-red);">
+                <strong>Probe failed</strong><br><br>
+                ${e.toString()}<br><br>
+                <small>This is often due to CORS restrictions. The target server must allow cross-origin requests from this domain.</small>
+            </div>`;
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    function renderResults(result) {
+        const output = document.getElementById('demo-output');
+
+        let html = '<div class="demo-results">';
+
+        // Overview
+        html += '<div class="demo-section-header">Overview</div>';
+        html += renderRow('Target', result.target);
+        html += renderRow('Status', result.status_code, getStatusClass(result.status_code));
+        html += renderRow('Health', result.health, getHealthClass(result.health));
+        html += renderRow('Timestamp', new Date(result.timestamp).toLocaleString());
+
+        // Timing
+        if (result.timing && result.timing.available) {
+            html += '<div class="demo-section-header">Timing</div>';
+            html += renderRow('DNS', formatMs(result.timing.dns_ms));
+            html += renderRow('TCP', formatMs(result.timing.tcp_ms));
+            html += renderRow('TLS', formatMs(result.timing.tls_ms));
+            html += renderRow('TTFB', formatMs(result.timing.ttfb_ms));
+            html += renderRow('Total', formatMs(result.timing.total_ms), getLatencyClass(result.timing.total_ms));
+        }
+
+        // Headers
+        html += '<div class="demo-section-header">Security Headers</div>';
+        const h = result.headers;
+        html += renderRow('HSTS', h.hsts_present ? 'Present' : 'Missing', h.hsts_present ? 'good' : 'warning');
+        html += renderRow('CSP', h.csp_present ? 'Present' : 'Missing', h.csp_present ? 'good' : 'warning');
+        html += renderRow('X-Frame-Options', h.xfo_present ? 'Present' : 'Missing', h.xfo_present ? 'good' : 'warning');
+        html += renderRow('X-Content-Type-Options', h.xcto_present ? 'Present' : 'Missing', h.xcto_present ? 'good' : 'warning');
+
+        // SEO
+        html += '<div class="demo-section-header">SEO</div>';
+        const seo = result.seo;
+        html += renderRow('Title', seo.title ? truncate(seo.title.content, 50) : 'Missing', seo.title ? 'good' : 'bad');
+        html += renderRow('Description', seo.description ? `${seo.description.length} chars` : 'Missing', seo.description ? 'good' : 'warning');
+        html += renderRow('Canonical', seo.canonical ? 'Present' : 'Missing');
+        html += renderRow('H1 Count', seo.headings ? seo.headings.h1_count : 0);
+        html += renderRow('Open Graph', seo.open_graph && seo.open_graph.has_og ? 'Present' : 'Missing');
+
+        // AEO
+        html += '<div class="demo-section-header">AEO (AI Engine Optimization)</div>';
+        const aeo = result.aeo;
+        html += renderRow('JSON-LD Blocks', aeo.json_ld_count);
+        html += renderRow('Schema Types', aeo.schema_types.length > 0 ? aeo.schema_types.join(', ') : 'None');
+        html += renderRow('Semantic Score', `${aeo.semantic_score}/100`);
+        html += renderRow('Text Ratio', `${aeo.text_ratio.toFixed(1)}%`);
+
+        // Tech Stack
+        html += '<div class="demo-section-header">Technology</div>';
+        const tech = result.techstack;
+        if (tech.server) html += renderRow('Server', tech.server);
+        if (tech.cdn) html += renderRow('CDN', tech.cdn);
+        if (tech.framework) html += renderRow('Framework', tech.framework);
+        if (tech.cms) html += renderRow('CMS', tech.cms);
+        if (tech.libraries && tech.libraries.length > 0) {
+            html += renderRow('Libraries', tech.libraries.join(', '));
+        }
+        if (tech.analytics && tech.analytics.length > 0) {
+            html += renderRow('Analytics', tech.analytics.join(', '));
+        }
+
+        // Issues
+        if (result.issues && result.issues.length > 0) {
+            html += '<div class="demo-section-header">Issues Found</div>';
+            result.issues.forEach(issue => {
+                const severity = issue.severity.toLowerCase();
+                html += `<div class="demo-issue demo-issue--${severity}">
+                    <strong>${issue.severity}:</strong> ${issue.message}
+                    ${issue.recommendation ? `<br><small>${issue.recommendation}</small>` : ''}
+                </div>`;
+            });
+        }
+
+        // Limitations
+        if (result.limitations && result.limitations.length > 0) {
+            html += `<div class="demo-limitations">
+                <div class="demo-limitations__title">Browser Limitations</div>
+                <ul style="margin: 0; padding-left: 1.25rem;">
+                    ${result.limitations.map(l => `<li>${l}</li>`).join('')}
+                </ul>
+            </div>`;
+        }
+
+        html += '</div>';
+        output.innerHTML = html;
+    }
+
+    function renderRow(label, value, valueClass = '') {
+        const classAttr = valueClass ? ` class="demo-value demo-value--${valueClass}"` : ' class="demo-value"';
+        return `<div class="demo-row"><span class="demo-label">${label}</span><span${classAttr}>${value ?? 'N/A'}</span></div>`;
+    }
+
+    function formatMs(ms) {
+        if (ms === undefined || ms === null) return 'N/A';
+        return ms < 1 ? '<1ms' : `${Math.round(ms)}ms`;
+    }
+
+    function truncate(str, len) {
+        if (!str) return '';
+        return str.length > len ? str.substring(0, len) + '...' : str;
+    }
+
+    function getStatusClass(status) {
+        if (status >= 200 && status < 300) return 'good';
+        if (status >= 300 && status < 400) return 'warning';
+        return 'bad';
+    }
+
+    function getHealthClass(health) {
+        if (health === 'Healthy') return 'good';
+        if (health === 'Degraded') return 'warning';
+        return 'bad';
+    }
+
+    function getLatencyClass(ms) {
+        if (ms < 300) return 'good';
+        if (ms < 1000) return 'warning';
+        return 'bad';
+    }
+
+    // Copy install command
+    window.copyInstallCommand = function() {
+        const cmd = 'curl -fsSL https://raw.githubusercontent.com/raskell-io/sango/main/install.sh | sh';
+        navigator.clipboard.writeText(cmd).then(() => {
+            const btn = document.querySelector('.install-copy-btn');
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            setTimeout(() => {
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+            }, 2000);
+        });
+    };
+</script>
+{% endblock %}

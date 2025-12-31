@@ -1,0 +1,223 @@
+# Sango - mise configuration
+# Operator-grade edge diagnostics CLI
+
+[env]
+RUST_BACKTRACE = "1"
+CARGO_TERM_COLOR = "always"
+RUST_LOG = "info"
+
+[tools]
+rust = "1.85.0"
+zola = "0.19.2"
+
+# Build tasks
+[tasks.build]
+description = "Build debug binary"
+run = "cargo build"
+
+[tasks.release]
+description = "Build optimized release binary"
+run = """
+cargo build --release
+strip target/release/sango 2>/dev/null || true
+echo "Release binary: target/release/sango"
+ls -lh target/release/sango
+"""
+
+[tasks.install]
+description = "Build and install release binary"
+depends = ["release"]
+run = """
+sudo cp target/release/sango /usr/local/bin/
+echo "Sango installed to /usr/local/bin/sango"
+sango --version
+"""
+
+# WASM tasks
+[tasks.wasm]
+description = "Build WebAssembly module"
+run = """
+#!/bin/bash
+set -e
+cd web
+wasm-pack build --target web
+echo "WASM build complete!"
+ls -lh pkg/
+"""
+
+[tasks."wasm:release"]
+description = "Build optimized WebAssembly module"
+run = """
+#!/bin/bash
+set -e
+cd web
+wasm-pack build --target web --release
+echo "WASM release build complete!"
+ls -lh pkg/
+"""
+
+# Site tasks
+[tasks."site:build"]
+description = "Build the landing page site"
+depends = ["wasm"]
+run = """
+#!/bin/bash
+set -e
+
+# Copy WASM artifacts to site
+cp web/pkg/sango_web.js web/pkg/sango_web_bg.wasm site/static/wasm/
+echo "WASM artifacts copied to site"
+
+# Build site
+cd site
+zola build
+echo "Site built: site/public/"
+"""
+
+[tasks."site:serve"]
+description = "Serve the landing page site locally"
+depends = ["site:build"]
+run = """
+cd site
+zola serve --port 1111
+"""
+
+[tasks."site:dev"]
+description = "Watch and serve site with live reload"
+run = """
+cd site
+zola serve --port 1111 --drafts
+"""
+
+# Test tasks
+[tasks.test]
+description = "Run all tests"
+run = "cargo test --workspace"
+
+[tasks."test:wasm"]
+description = "Run WASM tests"
+run = """
+cd web
+wasm-pack test --headless --chrome
+"""
+
+# Code quality tasks
+[tasks.fmt]
+description = "Format code"
+run = "cargo fmt --all"
+
+[tasks."fmt:check"]
+description = "Check code formatting"
+run = "cargo fmt --all -- --check"
+
+[tasks.lint]
+description = "Run clippy linter"
+run = "cargo clippy --workspace --all-targets -- -D warnings"
+
+[tasks.check]
+description = "Run fmt, lint, and test"
+depends = ["fmt", "lint", "test"]
+
+# Development tasks
+[tasks.run]
+description = "Run sango with debug build"
+depends = ["build"]
+run = "RUST_LOG=debug ./target/debug/sango"
+
+[tasks.dev]
+description = "Watch for changes and rebuild"
+run = "cargo watch -x build -x test"
+
+# Documentation tasks
+[tasks.docs]
+description = "Generate and open documentation"
+run = "cargo doc --workspace --all-features --no-deps --open"
+
+# Clean tasks
+[tasks.clean]
+description = "Clean all build artifacts"
+run = """
+cargo clean
+rm -rf web/pkg
+rm -rf site/public
+rm -rf site/static/wasm/*.js site/static/wasm/*.wasm
+echo "Clean complete"
+"""
+
+# Release packaging tasks
+[tasks.package]
+description = "Create release tarball for current platform"
+depends = ["release"]
+run = """
+#!/bin/bash
+set -e
+
+VERSION=$(cargo pkgid | cut -d# -f2)
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+
+# Normalize arch name
+case "$ARCH" in
+    x86_64) ARCH="amd64" ;;
+    aarch64|arm64) ARCH="arm64" ;;
+esac
+
+ARTIFACT="sango-v${VERSION}-${OS}-${ARCH}"
+TARBALL="${ARTIFACT}.tar.gz"
+
+echo "Packaging ${ARTIFACT}..."
+
+# Create temp directory
+mkdir -p dist
+rm -rf "dist/${ARTIFACT}"
+mkdir -p "dist/${ARTIFACT}"
+
+# Copy binary and docs
+cp target/release/sango "dist/${ARTIFACT}/"
+cp README.md "dist/${ARTIFACT}/" 2>/dev/null || true
+cp LICENSE* "dist/${ARTIFACT}/" 2>/dev/null || true
+
+# Create tarball
+cd dist
+tar -czvf "${TARBALL}" "${ARTIFACT}"
+
+# Generate checksum
+shasum -a 256 "${TARBALL}" > "${TARBALL}.sha256"
+
+echo ""
+echo "Package created: dist/${TARBALL}"
+echo "Checksum: dist/${TARBALL}.sha256"
+ls -lh "${TARBALL}"
+"""
+
+# CI tasks
+[tasks.ci]
+description = "Run CI checks locally"
+depends = ["fmt:check", "lint", "test"]
+run = "echo 'All CI checks passed!'"
+
+[tasks.all]
+description = "Build everything"
+depends = ["release", "wasm", "site:build"]
+run = "echo 'Full build complete!'"
+
+# Quick aliases
+[tasks.b]
+alias = "build"
+
+[tasks.r]
+alias = "run"
+
+[tasks.t]
+alias = "test"
+
+[tasks.w]
+alias = "wasm"
+
+[tasks.s]
+alias = "site:serve"
+
+# Default task
+[tasks.default]
+description = "Show available tasks"
+run = "mise tasks"

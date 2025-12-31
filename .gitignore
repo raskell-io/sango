@@ -6,3 +6,10 @@ Cargo.lock
 .idea/
 .vscode/
 *.log
+
+# Build outputs
+/dist
+/web/pkg
+/site/public
+/site/static/wasm/*.js
+/site/static/wasm/*.wasm

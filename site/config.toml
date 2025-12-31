@@ -12,9 +12,10 @@ highlight_code = true
 highlight_theme = "base16-ocean-dark"
 
 [extra]
-mode = "site"
+mode = "product"
 show_theme_toggle = true
-author = "Raskell"
+author = "raskell.io"
+author_url = "https://raskell.io"
 author_type = "Organization"
 keywords = "edge diagnostics, TLS, HTTP, security headers, SEO, AEO, CLI tool"
 
@@ -30,21 +31,16 @@ og_image_width = 1200
 og_image_height = 630
 og_image_alt = "Sango - Edge Diagnostics CLI"
 
-# Hero section
-[extra.hero]
-title = "sango"
-subtitle = "Edge diagnostics for the modern web"
-tagline = "TLS inspection, security headers, SEO/AEO analysis, and content intelligence - all in a single command."
-[extra.hero.cta]
-text = "Install"
-url = "#install"
-[extra.hero.secondary_cta]
-text = "Try in Browser"
-url = "#demo"
-
 # Social links
 [extra.social]
 github = "https://github.com/raskell-io/sango"
+
+# Product mode settings
+[extra.product]
+icon = "assets/sango-icon.png"
+tagline = "Edge diagnostics for the modern web"
+footer_description = "Operator-grade TLS inspection, security headers, SEO/AEO analysis, and content intelligence - all in a single command."
+license = "Licensed under Apache 2.0."
 
 # Navigation
 [[extra.nav]]

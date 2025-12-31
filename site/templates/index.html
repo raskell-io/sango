@@ -1019,11 +1019,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Skip Link for Accessibility -->
-<a href="#main-content" class="skip-link">Skip to main content</a>
-
-<main id="main-content" role="main" aria-label="Main content">
-
 <!-- Demo Section - Primary Hero -->
 <section class="demo-hero" id="demo" aria-labelledby="demo-heading">
     <h1 id="demo-heading" class="visually-hidden">Sango - Edge Diagnostics Demo</h1>
@@ -1085,14 +1080,14 @@
 <section class="usage-section" id="usage" aria-labelledby="usage-heading">
     <h2 id="usage-heading" class="usage-section__title">Usage</h2>
     <div class="usage-container" role="list" aria-label="Command examples">
-        <article class="usage-example" role="listitem" onclick="toggleUsageExample(this)">
-            <div class="usage-example__header" role="button" tabindex="0" aria-expanded="false" aria-controls="usage-output-1" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUsageExample(this.parentElement);}">
+        <div class="usage-example" onclick="toggleUsageExample(this)">
+            <div class="usage-example__header">
                 <div class="usage-example__content">
-                    <div class="usage-example__comment" aria-hidden="true"># Full endpoint assessment</div>
-                    <div class="usage-example__cmd"><code>sango https://example.com</code></div>
+                    <div class="usage-example__comment"># Full endpoint assessment</div>
+                    <div class="usage-example__cmd">sango https://example.com</div>
                 </div>
-                <button class="usage-example__toggle" aria-label="Toggle command output" tabindex="-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <button class="usage-example__toggle" aria-label="Toggle output">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="6 9 12 15 18 9"/>
                     </svg>
                 </button>
@@ -1313,7 +1308,6 @@
     </div>
 </section>
 
-</main>
 {% endblock %}
 
 {% block footer %}

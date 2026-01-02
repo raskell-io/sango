@@ -19,7 +19,7 @@
     <img alt="CLI" src="https://img.shields.io/badge/CLI-diagnostic-f5a97f?style=for-the-badge">
   </a>
   <a href="LICENSE">
-    <img alt="License" src="https://img.shields.io/badge/License-MIT%20%7C%20Apache--2.0-c6a0f6?style=for-the-badge">
+    <img alt="License" src="https://img.shields.io/badge/License-Apache--2.0-c6a0f6?style=for-the-badge">
   </a>
 </p>
 
@@ -176,6 +176,16 @@ Sango is part of the [raskell.io](https://raskell.io) ecosystem, alongside:
 
 ---
 
+## Support
+
+If you find Sango useful, consider supporting its development:
+
+<a href="https://ko-fi.com/raskell">
+  <img src="https://img.shields.io/badge/Ko--fi-Support-ff5e5b?logo=ko-fi&logoColor=white&style=for-the-badge" alt="Ko-fi">
+</a>
+
+---
+
 ## License
 
-MIT OR Apache-2.0
+Apache-2.0

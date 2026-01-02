@@ -129,6 +129,9 @@
     
 
     
+    
+    
+    
     <script>
         (function() {
             try {
@@ -141,6 +144,7 @@
             } catch(e) {}
         })();
     </script>
+    
 
     
 </head>
@@ -163,6 +167,8 @@
         <div class="layout__main">
             
             
+
+
 
 
 <header class="header" role="banner">
@@ -268,11 +274,9 @@
             
             
         </div>
-
-        
-        
     </div>
 </header>
+
 
             
 
@@ -346,6 +350,105 @@
 
     
     
+    
+
+
+<div id="nav-overlay" class="nav-overlay" aria-hidden="true">
+    <div class="nav-overlay__backdrop"></div>
+    <div class="nav-overlay__panel">
+        <div class="nav-overlay__header">
+            <span class="nav-overlay__title">Sango</span>
+            <button class="nav-overlay__close" aria-label="Close navigation">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"/>
+                    <path d="m6 6 12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <nav class="nav-overlay__nav">
+            <ul class="nav-overlay__list">
+                
+                    
+                    <li class="nav-overlay__item">
+                        <a href="#features" class="nav-overlay__link ">
+                            Features
+                        </a>
+                    </li>
+                    
+                    <li class="nav-overlay__item">
+                        <a href="#demo" class="nav-overlay__link ">
+                            Demo
+                        </a>
+                    </li>
+                    
+                    <li class="nav-overlay__item">
+                        <a href="#install" class="nav-overlay__link ">
+                            Install
+                        </a>
+                    </li>
+                    
+                    <li class="nav-overlay__item">
+                        <a href="https://github.com/raskell-io/sango" class="nav-overlay__link ">
+                            GitHub
+                        </a>
+                    </li>
+                    
+                
+            </ul>
+        </nav>
+
+        <div class="nav-overlay__footer">
+            
+            
+            <div class="nav-overlay__theme">
+                <span class="nav-overlay__theme-label">Theme</span>
+                
+<button class="theme-toggle" type="button" aria-label="Toggle color theme: cycles through light, dark, and auto modes" aria-live="polite" title="Toggle theme">
+    <span class="theme-toggle__icons">
+        
+        <span class="theme-toggle__sun" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2"/>
+                <path d="M12 20v2"/>
+                <path d="m4.93 4.93 1.41 1.41"/>
+                <path d="m17.66 17.66 1.41 1.41"/>
+                <path d="M2 12h2"/>
+                <path d="M20 12h2"/>
+                <path d="m6.34 17.66-1.41 1.41"/>
+                <path d="m19.07 4.93-1.41 1.41"/>
+            </svg>
+        </span>
+
+        
+        <span class="theme-toggle__moon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+            </svg>
+        </span>
+
+        
+        <span class="theme-toggle__auto" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 2a7 7 0 1 0 7 7"/>
+            </svg>
+        </span>
+    </span>
+    <span class="sr-only theme-toggle__status">Current theme: auto</span>
+</button>
+
+            </div>
+            
+
+            
+            
+        </div>
+    </div>
+</div>
+
+    
 
     
     
@@ -357,10 +460,13 @@
     
 
     
+    
+    
     <script src="https://sango.raskell.io/js/theme.js" defer></script>
     <script src="https://sango.raskell.io/js/navigation.js" defer></script>
     <script src="https://sango.raskell.io/js/code.js" defer></script>
 
+    
     
 
     

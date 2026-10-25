@@ -14,9 +14,9 @@ highlight_theme = "base16-ocean-dark"
 [extra]
 mode = "product"
 show_theme_toggle = true
-author = "raskell.io"
-author_url = "https://raskell.io"
-author_type = "Organization"
+author = "Raffael Schneider"
+author_url = "https://raskell.io/"
+author_type = "Person"
 keywords = "edge diagnostics, TLS, HTTP, security headers, SEO, AEO, CLI tool"
 
 # Logo in navbar
@@ -26,9 +26,9 @@ logo = "sango-icon.png"
 favicon = "favicon.svg"
 
 # Social/OG
-og_image = "og-image.png"
-og_image_width = 1200
-og_image_height = 630
+og_image = "sango-icon.png"
+og_image_width = 1024
+og_image_height = 1024
 og_image_alt = "Sango - Edge Diagnostics CLI"
 
 # Social links

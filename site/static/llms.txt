@@ -1,0 +1,17 @@
+# Sango
+
+> Sango is an operator-grade edge diagnostics CLI that analyzes a web endpoint in a single command: TLS, HTTP protocols, security headers, latency, and technology stack.
+
+Sango (珊瑚, "coral") is a read-only command-line tool for operators and developers who want to know whether a web edge is sane, observable, and survivable. Point it at a URL (`sango https://example.com`) and it inspects the TLS certificate chain, expiry, cipher and ALPN, detects HTTP/1.1, HTTP/2 and HTTP/3 support, checks security headers such as HSTS, CSP, COOP/COEP and X-Frame-Options, breaks latency down into DNS, TCP, TLS and TTFB, and reports judgments rather than raw data. Output is available as pretty text, JSON, or a compact single line, and the exit code reflects the health of the endpoint (0 healthy or degraded, 1 unhealthy, 2 unknown). All probes are standard, safe HTTP and TLS operations. It is written in Rust and installs with `cargo install sango` or `curl -fsSL getsango.raskell.io | sh`. The website also runs a reduced, browser-based demo compiled to WebAssembly that checks headers, SEO, AEO and content of a URL. Sango is free and open source under the Apache 2.0 licence.
+
+## Links
+
+- [Sango website](https://sango.raskell.io/): landing page with a browser demo
+- [Source code](https://github.com/raskell-io/sango): Rust source, README, and usage
+- [Releases](https://github.com/raskell-io/sango/releases): prebuilt binaries
+- [raskell.io projects](https://raskell.io/projects/): Sango among the other raskell.io projects
+- [Author](https://raskell.io/about/): Raffael Schneider
+
+## Optional
+
+- [Licence](https://github.com/raskell-io/sango/blob/main/LICENSE): Apache License 2.0

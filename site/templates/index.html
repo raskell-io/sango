@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Sango">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="alternate" type="text/markdown" title="llms.txt" href="/llms.txt">
 
 <!-- JSON-LD Structured Data for AEO -->
 <script type="application/ld+json">
@@ -28,9 +29,16 @@
         "priceCurrency": "USD"
     },
     "author": {
-        "@type": "Organization",
-        "name": "Raskell",
-        "url": "https://raskell.io"
+        "@type": "Person",
+        "@id": "https://raskell.io/#person",
+        "name": "Raffael Schneider",
+        "url": "https://raskell.io/"
+    },
+    "creator": {
+        "@type": "Person",
+        "@id": "https://raskell.io/#person",
+        "name": "Raffael Schneider",
+        "url": "https://raskell.io/"
     },
     "publisher": {
         "@type": "Organization",
@@ -41,7 +49,11 @@
             "url": "{{ get_url(path='assets/sango-icon.png') | safe }}"
         }
     },
-    "screenshot": "{{ get_url(path='og-image.png') | safe }}",
+    "image": "{{ get_url(path='sango-icon.png') | safe }}",
+    "isAccessibleForFree": true,
+    "license": "https://www.apache.org/licenses/LICENSE-2.0",
+    "codeRepository": "https://github.com/raskell-io/sango",
+    "inLanguage": "en",
     "featureList": [
         "TLS certificate inspection and validation",
         "HTTP/1.1, HTTP/2, HTTP/3 protocol detection",
@@ -60,7 +72,8 @@
         "url": "https://github.com/raskell-io/sango#readme"
     },
     "sameAs": [
-        "https://github.com/raskell-io/sango"
+        "https://github.com/raskell-io/sango",
+        "https://raskell.io/projects/"
     ]
 }
 </script>
@@ -73,9 +86,7 @@
     "url": "{{ config.base_url | safe }}",
     "description": "{{ config.description }}",
     "publisher": {
-        "@type": "Organization",
-        "name": "Raskell",
-        "url": "https://raskell.io"
+        "@id": "https://raskell.io/#person"
     },
     "potentialAction": {
         "@type": "SearchAction",
@@ -503,7 +514,7 @@
             </nav>
         </div>
         <div class="product-footer__bottom">
-            <p>&copy; {{ now() | date(format='%Y') }} <a href="https://raskell.io">raskell.io</a>. Licensed under Apache 2.0.</p>
+            <p>&copy; {{ now() | date(format='%Y') }} <a href="https://raskell.io/" rel="author" title="Made by Raffael Schneider">raskell.io</a>. Licensed under Apache 2.0.</p>
         </div>
     </div>
 </footer>

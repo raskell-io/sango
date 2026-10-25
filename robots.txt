@@ -1,4 +1,7 @@
 User-agent: *
-Disallow:
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 Allow: /
+
 Sitemap: https://sango.raskell.io/sitemap.xml
+
+# For agents: https://sango.raskell.io/llms.txt . Made by Raffael Schneider, https://raskell.io/
